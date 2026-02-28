@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Stable Strategic Build</title>
+<title>ATS Resume Maze — Dynamic Content Build</title>
 
 <style>
 :root{
@@ -32,7 +32,7 @@ button{
   font-weight:bold; border-radius:6px;
   background:#FFFBF0; color:var(--nav);
 }
-#pathBox{ margin-top:12px; font-family:Arial, sans-serif; font-size:.85rem; }
+#pathBox{ margin-top:12px; font-family:Arial; font-size:.85rem; }
 #pathBox code{
   display:block; background:rgba(255,255,255,.12);
   padding:8px; border-radius:6px; margin-top:6px;
@@ -68,7 +68,7 @@ button{
 .node.bad{ background:var(--red)!important; color:#fff; }
 
 .detour{
-  font-family:Arial, sans-serif;
+  font-family:Arial;
   font-size:.85rem;
   background:#f2f2f2;
   border:1px solid #e3e3e3;
@@ -151,15 +151,54 @@ li{ margin:6px 0; }
 </div>
 
 <script>
+
+/* -------- Context Library -------- */
+
+const contexts = [
+{
+name:"Data Analytics",
+role:"Data Analyst, Meridian Insights",
+verbs:"Analyzed datasets, built dashboards, optimized reporting workflows",
+metrics:"Improved campaign ROI by 18% through predictive modeling",
+keywords:"SQL, Tableau, Python, A/B Testing",
+summary:"Detail-oriented analyst translating complex data into business decisions."
+},
+{
+name:"Marketing",
+role:"Marketing Coordinator, BrightWave Agency",
+verbs:"Launched campaigns, developed content strategy, led outreach initiatives",
+metrics:"Increased social engagement 35% in 6 months",
+keywords:"SEO, GA4, Content Strategy, Email Marketing",
+summary:"Strategic communicator driving measurable audience growth."
+},
+{
+name:"Operations",
+role:"Operations Associate, Northstar Logistics",
+verbs:"Streamlined processes, reduced bottlenecks, coordinated cross-team workflows",
+metrics:"Reduced fulfillment time 22% through process redesign",
+keywords:"Process Optimization, KPI Tracking, Supply Chain Systems",
+summary:"Operations professional improving efficiency at scale."
+},
+{
+name:"Nonprofit Program Management",
+role:"Program Coordinator, Community Forward",
+verbs:"Managed initiatives, secured partnerships, facilitated stakeholder engagement",
+metrics:"Expanded community participation by 40%",
+keywords:"Grant Writing, Community Outreach, Program Evaluation",
+summary:"Mission-driven coordinator strengthening community impact."
+}
+];
+
+let activeContext;
+
+/* -------- Graph + State (UNCHANGED LOGIC) -------- */
+
 let nodes={}, graph={}, detours=[];
 
-function addNode(id,label,tag=""){
-  nodes[id]={id,label,tag,el:null};
-  graph[id]=[];
-}
+function addNode(id,label,tag=""){ nodes[id]={id,label,tag,el:null}; graph[id]=[]; }
 function connect(a,b){
-  if(!graph[a].includes(b))graph[a].push(b);
-  if(!graph[b].includes(a))graph[b].push(a);
+if(!graph[a].includes(b))graph[a].push(b);
+if(!graph[b].includes(a))graph[b].push(a);
 }
 
 function buildGraph(){
@@ -179,15 +218,14 @@ addNode("exp_entry","Enter Experience");
 addNode("exp_exit","Exit Experience");
 connect("skills","exp_entry");
 
-addNode("exp_role","Role + Company");
-addNode("exp_verbs","Strong Verbs");
-addNode("exp_metrics","Quantified Impact");
-addNode("exp_keywords","Tailored Keywords");
-addNode("exp_format","Clean Formatting");
+addNode("exp_role",activeContext.role);
+addNode("exp_verbs",activeContext.verbs);
+addNode("exp_metrics",activeContext.metrics);
+addNode("exp_keywords",activeContext.keywords);
+addNode("exp_format","Consistent formatting, ATS-friendly layout");
 
 connect("exp_entry","exp_role");
 
-/* Strategic Routes */
 connect("exp_role","exp_metrics");
 connect("exp_metrics","exp_verbs");
 connect("exp_verbs","exp_keywords");
@@ -197,14 +235,12 @@ connect("exp_role","exp_keywords");
 connect("exp_format","exp_verbs");
 connect("exp_verbs","exp_metrics");
 
-/* Exit only from format */
 connect("exp_format","exp_exit");
 
 connect("exp_exit","projects");
 connect("projects","certifications");
 connect("certifications","education");
 
-/* Detours */
 const traps=[
 ["weak_verbs","Weak verbs"],
 ["no_metrics","No metrics"],
@@ -269,10 +305,7 @@ nodes[id].el.classList.add("available");
 document.getElementById("moveCount").textContent=state.moves;
 
 let baseScore = 100 - state.moves - (state.trapTypes.size * 8);
-
-if (state.visited.has("exp_metrics")) {
-  baseScore += 5;
-}
+if (state.visited.has("exp_metrics")) baseScore += 5;
 
 document.getElementById("score").textContent=Math.max(0,baseScore);
 document.getElementById("pathText").textContent=state.path.join(" → ");
@@ -312,16 +345,16 @@ document.getElementById("expBackbone").innerHTML="";
 document.getElementById("expDetours").innerHTML="";
 
 document.getElementById("headerLine").append(
-makeNode("header","FIRST LAST"),
-document.createTextNode(" • Springfield, MA • email@example.com")
+makeNode("header","Jordan Avery"),
+document.createTextNode(" • Springfield, MA • jordan@example.com")
 );
 
 document.getElementById("summaryLine").append(
-makeNode("summary","Data-driven analytics professional")
+makeNode("summary",activeContext.summary)
 );
 
 document.getElementById("skillsLine").append(
-makeNode("skills","GA4 • SEO • Reporting")
+makeNode("skills",activeContext.keywords)
 );
 
 let ul=document.getElementById("expBackbone");
@@ -337,12 +370,13 @@ detours.forEach(id=>{
 d.appendChild(makeNode(id,null,"detour"));
 });
 
-document.getElementById("projectsLine").append(makeNode("projects","ATS Resume Maze"));
-document.getElementById("certsLine").append(makeNode("certifications","Google Analytics Cert"));
-document.getElementById("educationLine").append(makeNode("education","B.A., Communication"));
+document.getElementById("projectsLine").append(makeNode("projects","Interactive ATS Resume Maze"));
+document.getElementById("certsLine").append(makeNode("certifications","Professional Certification"));
+document.getElementById("educationLine").append(makeNode("education","B.A., Communication Studies"));
 }
 
 function reset(){
+activeContext = contexts[Math.floor(Math.random()*contexts.length)];
 buildGraph();
 buildResume();
 state=newState();
