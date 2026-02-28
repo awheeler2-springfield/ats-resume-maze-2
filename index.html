@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Expanded Content Build</title>
+<title>ATS Resume Maze — Block Style Stable</title>
 
 <style>
 :root{
@@ -17,6 +17,7 @@
   --teal:#0A6E6E;
   --red:#ff6b6b;
 }
+
 body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
 
 .rail{
@@ -25,13 +26,16 @@ body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--in
   background:var(--nav); color:#fff;
   padding:16px; box-sizing:border-box;
 }
-.stat{ margin:8px 0; font-family:Arial, sans-serif; }
+
+.stat{ margin:8px 0; font-family:Arial; }
+
 button{
   cursor:pointer; border:none;
   padding:10px 12px;
   font-weight:bold; border-radius:6px;
   background:#FFFBF0; color:var(--nav);
 }
+
 #pathBox{ margin-top:12px; font-family:Arial; font-size:.85rem; }
 #pathBox code{
   display:block; background:rgba(255,255,255,.12);
@@ -40,6 +44,7 @@ button{
 }
 
 .page{ margin-left:340px; padding:30px 20px; }
+
 .resume{
   max-width:980px; margin:0 auto;
   background:var(--paper);
@@ -48,6 +53,7 @@ button{
 }
 
 .section{ margin-top:22px; }
+
 .section-title{
   font-weight:bold;
   border-bottom:1px solid #000;
@@ -55,28 +61,32 @@ button{
   margin-bottom:10px;
 }
 
+/* BLOCK NODES */
+
 .node{
   display:block;
-  padding:6px 8px;
-  border-radius:4px;
+  padding:10px 12px;
+  margin-bottom:8px;
+  border-radius:6px;
+  background:#fafafa;
   cursor:pointer;
-  margin-bottom:6px;
+  transition:.15s ease;
 }
-.node.disabled{ pointer-events:none; opacity:.45; }
+
+.node.disabled{ pointer-events:none; opacity:.4; }
 .node.available{ outline:2px solid rgba(10,110,110,.35); }
 .node.visited{ background:var(--yellow); }
 .node.current{ background:var(--tealbg); outline:2px solid var(--teal); }
 .node.bad{ background:var(--red)!important; color:#fff; }
 
 .detour{
-  font-family:Arial;
   font-size:.85rem;
   background:#f2f2f2;
   border:1px solid #e3e3e3;
-  padding:6px 8px;
+  padding:6px 10px;
   border-radius:999px;
-  margin:4px 6px 4px 0;
   display:inline-block;
+  margin:4px 6px 4px 0;
 }
 
 .exp-grid{
@@ -107,17 +117,17 @@ button{
 
 <div class="section">
 <div class="section-title">HEADER</div>
-<p id="headerLine"></p>
+<div id="headerLine"></div>
 </div>
 
 <div class="section">
 <div class="section-title">SUMMARY</div>
-<p id="summaryLine"></p>
+<div id="summaryLine"></div>
 </div>
 
 <div class="section">
 <div class="section-title">SKILLS</div>
-<p id="skillsLine"></p>
+<div id="skillsLine"></div>
 </div>
 
 <div class="section">
@@ -132,17 +142,17 @@ button{
 
 <div class="section">
 <div class="section-title">PROJECTS</div>
-<p id="projectsLine"></p>
+<div id="projectsLine"></div>
 </div>
 
 <div class="section">
 <div class="section-title">CERTIFICATIONS</div>
-<p id="certsLine"></p>
+<div id="certsLine"></div>
 </div>
 
 <div class="section">
 <div class="section-title">EDUCATION</div>
-<p id="educationLine"></p>
+<div id="educationLine"></div>
 </div>
 
 </div>
@@ -150,65 +160,70 @@ button{
 
 <script>
 
-/* Context Library */
+/* -------- Context Library -------- */
 
 const contexts = [
 {
 role:"Data Analyst, Meridian Insights",
-summary:"Detail-oriented analyst translating complex datasets into actionable business decisions.",
+summary:"Detail-oriented analyst translating complex datasets into actionable decisions.",
 verbsStrong:"Analyzed cross-channel performance data to identify growth opportunities.",
 verbsWeak:"Responsible for looking at reports and helping with analytics.",
 metricsStrong:"Improved campaign ROI by 18% through predictive modeling.",
 metricsWeak:"Helped improve results over time.",
-keywordsStrong:"Applied SQL, Tableau, and A/B testing methodologies aligned with job description requirements.",
-keywordsWeak:"Experienced with many tools and platforms.",
+keywordsStrong:"Applied SQL, Tableau, and A/B testing aligned with job description.",
+keywordsWeak:"Experienced with many tools.",
 formatStrong:"Consistent bullet formatting, aligned dates, ATS-friendly layout.",
-formatWeak:"Mixed punctuation, uneven spacing, inconsistent date formatting."
+formatWeak:"Mixed punctuation and inconsistent spacing."
 },
 {
 role:"Marketing Coordinator, BrightWave Agency",
-summary:"Strategic communicator driving measurable audience engagement.",
-verbsStrong:"Launched integrated campaigns across email and social platforms.",
-verbsWeak:"Helped with marketing projects.",
-metricsStrong:"Increased engagement rates 35% within six months.",
-metricsWeak:"Engagement went up significantly.",
-keywordsStrong:"Aligned resume language with SEO, GA4, and content strategy terminology.",
+summary:"Strategic communicator driving measurable audience growth.",
+verbsStrong:"Launched integrated campaigns across digital platforms.",
+verbsWeak:"Helped with marketing tasks.",
+metricsStrong:"Increased engagement 35% within six months.",
+metricsWeak:"Engagement improved significantly.",
+keywordsStrong:"Aligned resume language with SEO and GA4 terminology.",
 keywordsWeak:"Added lots of marketing keywords.",
-formatStrong:"Clear hierarchy, consistent tense, readable spacing.",
-formatWeak:"Overused bold text and inconsistent capitalization."
+formatStrong:"Clear hierarchy and consistent tense.",
+formatWeak:"Overused bold and inconsistent capitalization."
 }
 ];
 
 let activeContext;
 
-/* Engine logic remains identical except content expansion */
+/* -------- Engine -------- */
 
 let nodes={}, graph={}, detours=[];
 
-function addNode(id,label,tag=""){ nodes[id]={id,label,tag,el:null}; graph[id]=[]; }
+function addNode(id,label,tag=""){
+  nodes[id]={id,label,tag,el:null};
+  graph[id]=[];
+}
+
 function connect(a,b){
-if(!graph[a].includes(b))graph[a].push(b);
-if(!graph[b].includes(a))graph[b].push(a);
+  if(!graph[a].includes(b))graph[a].push(b);
+  if(!graph[b].includes(a))graph[b].push(a);
 }
 
 function buildGraph(){
 nodes={}; graph={}; detours=[];
 
-addNode("header","Header");
-addNode("summary","Summary");
-addNode("skills","Skills");
-addNode("projects","Projects");
-addNode("certifications","Certifications");
-addNode("education","Education");
+addNode("header","Jordan Avery • Springfield, MA • jordan@example.com");
+addNode("summary",activeContext.summary);
+addNode("skills","Core Competencies listed here.");
+addNode("projects","Interactive ATS Resume Maze");
+addNode("certifications","Professional Certification");
+addNode("education","B.A., Communication Studies");
 
 connect("header","summary");
 connect("summary","skills");
 
 addNode("exp_entry","Enter Experience");
 addNode("exp_exit","Exit Experience");
+
 connect("skills","exp_entry");
 
-addNode("exp_role",activeContext.role + " — Scope: Strategic role with measurable outcomes.");
+addNode("exp_role",activeContext.role);
 addNode("exp_verbs",activeContext.verbsStrong + " | Contrast: " + activeContext.verbsWeak);
 addNode("exp_metrics",activeContext.metricsStrong + " | Contrast: " + activeContext.metricsWeak);
 addNode("exp_keywords",activeContext.keywordsStrong + " | Contrast: " + activeContext.keywordsWeak);
@@ -230,6 +245,28 @@ connect("exp_format","exp_exit");
 connect("exp_exit","projects");
 connect("projects","certifications");
 connect("certifications","education");
+
+/* Traps */
+const traps=[
+["weak_verbs","Weak verbs"],
+["no_metrics","No metrics"],
+["tables_layout","Tables/columns"],
+["keyword_dump","Keyword dumping"]
+];
+
+let count=0;
+for(let anchor of ["exp_role","exp_verbs","exp_metrics","exp_keywords"]){
+if(Math.random()<0.7){
+count++;
+let t=traps[Math.floor(Math.random()*traps.length)];
+let id="exp_s"+count;
+addNode(id,t[1],"trap:"+t[0]);
+detours.push(id);
+connect(anchor,id);
+connect(id,"exp_format");
+connect(id,"exp_keywords");
+}
+}
 }
 
 function newState(){
@@ -241,15 +278,16 @@ trapTypes:new Set(),
 path:["header"]
 };
 }
+
 let state;
 
-function makeNode(id,text){
-let s=document.createElement("div");
-s.className="node";
-s.textContent=text??nodes[id].label;
-s.onclick=()=>move(id);
-nodes[id].el=s;
-return s;
+function makeNode(id){
+let el=document.createElement("div");
+el.className="node";
+el.textContent=nodes[id].label;
+el.onclick=()=>move(id);
+nodes[id].el=el;
+return el;
 }
 
 function render(){
@@ -271,34 +309,60 @@ nodes[id].el.classList.remove("disabled");
 nodes[id].el.classList.add("available");
 });
 
-document.getElementById("moveCount").textContent=state.moves;
-
-let baseScore = 100 - state.moves;
+let baseScore = 100 - state.moves - (state.trapTypes.size * 8);
 if (state.visited.has("exp_metrics")) baseScore += 5;
 
+document.getElementById("moveCount").textContent=state.moves;
 document.getElementById("score").textContent=Math.max(0,baseScore);
 document.getElementById("pathText").textContent=state.path.join(" → ");
 }
 
+function flash(id){
+let el=nodes[id].el;
+el.classList.add("bad");
+setTimeout(()=>{el.classList.remove("bad");},350);
+}
+
 function move(id){
 if(!graph[state.current].includes(id))return;
+
 state.moves++;
 state.current=id;
 state.visited.add(id);
 state.path.push(id);
+
+if(nodes[id].tag?.startsWith("trap:")){
+state.trapTypes.add(nodes[id].tag);
 render();
+flash(id);
+}else{
+render();
+}
 }
 
 function buildResume(){
-document.getElementById("headerLine").textContent="Jordan Avery • Springfield, MA • jordan@example.com";
-document.getElementById("summaryLine").append(makeNode("summary",activeContext.summary));
-document.getElementById("skillsLine").append(makeNode("skills","Core Competencies listed here."));
+for(let key of ["headerLine","summaryLine","skillsLine","projectsLine","certsLine","educationLine","expBackbone","expDetours"]){
+document.getElementById(key).innerHTML="";
+}
+
+document.getElementById("headerLine").append(makeNode("header"));
+document.getElementById("summaryLine").append(makeNode("summary"));
+document.getElementById("skillsLine").append(makeNode("skills"));
+
 let exp=document.getElementById("expBackbone");
 ["exp_entry","exp_role","exp_verbs","exp_metrics","exp_keywords","exp_format","exp_exit"]
 .forEach(id=>exp.append(makeNode(id)));
-document.getElementById("projectsLine").append(makeNode("projects","Interactive ATS Resume Maze"));
-document.getElementById("certsLine").append(makeNode("certifications","Professional Certification"));
-document.getElementById("educationLine").append(makeNode("education","B.A., Communication Studies"));
+
+let d=document.getElementById("expDetours");
+detours.forEach(id=>{
+let el=makeNode(id);
+el.classList.add("detour");
+d.append(el);
+});
+
+document.getElementById("projectsLine").append(makeNode("projects"));
+document.getElementById("certsLine").append(makeNode("certifications"));
+document.getElementById("educationLine").append(makeNode("education"));
 }
 
 function reset(){
@@ -310,6 +374,7 @@ render();
 }
 
 document.getElementById("resetBtn").onclick=reset;
+
 reset();
 </script>
 </body>
