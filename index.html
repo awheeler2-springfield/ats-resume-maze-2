@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATS Resume Maze — Strategic Experience (Debug-Safe)</title>
+
+<style>
+:root{
+  --bg:#f3f3f3;
+  --paper:#fff;
+  --ink:#111;
+  --ui:#ddd;
+  --nav:#1D3461;
+  --yellow:#ffe86a;
+  --tealbg:#F0FAFB;
+  --teal:#0A6E6E;
+  --red:#ff6b6b;
+}
+body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
+
+.rail{
+  position:fixed; left:0; top:0;
+  width:340px; height:100vh;
+  background:var(--nav); color:#fff;
+  padding:16px; box-sizing:border-box;
+  overflow:auto;
+}
+.rail h2{ margin:0 0 12px; font-family:Arial, sans-serif; }
+.stat{ margin:8px 0; font-family:Arial, sans-serif; }
+button{
+  cursor:pointer; border:none;
+  padding:10px 12px;
+  font-weight:bold; border-radius:6px;
+  background:#FFFBF0; color:var(--nav);
+}
+button:hover{ filter:brightness(.95); }
+
+#pathBox{ margin-top:12px; font-family:Arial, sans-serif; font-size:.85rem; }
+#pathBox code{
+  display:block; background:rgba(255,255,255,.12);
+  padding:8px; border-radius:6px; margin-top:6px;
+  word-break:break-word;
+}
+
+.page{ margin-left:340px; padding:30px 20px; }
+.resume{
+  max-width:980px; margin:0 auto;
+  background:var(--paper);
+  padding:46px 64px;
+  box-shadow:0 2px 14px rgba(0,0,0,.08);
+}
+
+.section{ margin-top:22px; }
+.section-title{
+  font-weight:bold;
+  border-bottom:1px solid #000;
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
+
+.node{
+  display:inline-block;
+  padding:2px 4px;
+  border-radius:3px;
+  cursor:pointer;
+}
+.node.disabled{ pointer-events:none; opacity:.45; }
+.node.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
+.node.visited{ background:var(--yellow); }
+.node.current{ background:var(--tealbg); outline:2px solid var(--teal); }
+.node.bad{ background:var(--red)!important; color:#fff; }
+
+.detour{
+  font-family:Arial, sans-serif;
+  font-size:.85rem;
+  background:#f2f2f2;
+  border:1px solid #e3e3e3;
+  padding:6px 8px;
+  border-radius:999px;
+  margin:4px 6px 4px 0;
+  display:inline-block;
+}
+
+ul{ margin:0 0 0 22px; }
+li{ margin:6px 0; }
+
+.exp-grid{
+  margin-top:10px;
+  padding:12px;
+  border:1px solid var(--ui);
+  border-radius:8px;
+  background:#fafafa;
+}
+</style>
+</head>
+<body>
+
+<div class="rail">
+  <h2>ATS Resume Maze</h2>
+  <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
+  <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
+  <button id="resetBtn">Reset Run</button>
+
+  <div id="pathBox">
+    <strong>Path:</strong>
+    <code id="pathText">header</code>
+  </div>
+
+  <div id="status" class="stat" style="opacity:.9;"></div>
+</div>
+
+<div class="page">
+  <div class="resume">
+
+    <div class="section">
+      <div class="section-title">HEADER</div>
+      <p id="headerLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">SUMMARY</div>
+      <p id="summaryLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">SKILLS</div>
+      <p id="skillsLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">PROFESSIONAL EXPERIENCE</div>
+      <ul id="expBackbone"></ul>
+
+      <div class="exp-grid">
+        <strong>Drafting Risks</strong>
+        <div id="expDetours"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">PROJECTS</div>
+      <p id="projectsLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">CERTIFICATIONS</div>
+      <p id="certsLine"></p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">EDUCATION</div>
+      <p id="educationLine"></p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ===========================
+   DEBUG SWITCH
+   - set DEBUG = true to see adjacency logs in the Console
+=========================== */
+const DEBUG = false;
+
+/* ---------- Graph + Nodes ---------- */
+let nodes = {};   // id -> { id, label, tag, el }
+let graph = {};   // id -> [neighbors]
+let detours = [];
+
+function addNode(id, label, tag=""){
+  nodes[id] = { id, label, tag, el: null };
+  graph[id] = [];
+}
+
+function connect(a,b){
+  if (!graph[a].includes(b)) graph[a].push(b);
+  if (!graph[b].includes(a)) graph[b].push(a);
+}
+
+function sanityCheckGraph(){
+  for (const a in graph){
+    for (const b of graph[a]){
+      if (!graph[b] || !graph[b].includes(a)){
+        throw new Error(`Graph not symmetric: ${a} ↔ ${b}`);
+      }
+    }
+  }
+}
+
+/* ---------- Build Graph (Strategic C) ---------- */
+function buildGraph(){
+  nodes = {}; graph = {}; detours = [];
+
+  addNode("header","Header");
+  addNode("summary","Summary");
+  addNode("skills","Skills");
+  addNode("projects","Projects");
+  addNode("certifications","Certifications");
+  addNode("education","Education");
+
+  connect("header","summary");
+  connect("summary","skills");
+
+  addNode("exp_entry","Enter Experience");
+  addNode("exp_exit","Exit Experience");
+  connect("skills","exp_entry");
+
+  // Strategic parallel backbone nodes
+  addNode("exp_role","Role + Company");
+  addNode("exp_verbs","Strong Verbs");
+  addNode("exp_metrics","Quantified Impact");
+  addNode("exp_keywords","Tailored Keywords");
+  addNode("exp_format","Clean Formatting");
+
+  // Entry
+  connect("exp_entry","exp_role");
+
+  // Route A (Impact-first): role → metrics → verbs → keywords → format
+  connect("exp_role","exp_metrics");
+  connect("exp_metrics","exp_verbs");
+  connect("exp_verbs","exp_keywords");
+  connect("exp_keywords","exp_format");
+
+  // Route B (ATS-first): role → keywords → format → verbs → metrics
+  connect("exp_role","exp_keywords");
+  connect("exp_format","exp_verbs");
+  connect("exp_verbs","exp_metrics");
+
+  // Exit (two exits to keep it non-linear)
+  connect("exp_format","exp_exit");
+  connect("exp_metrics","exp_exit");
+
+  // Back to spine
+  connect("exp_exit","projects");
+  connect("projects","certifications");
+  connect("certifications","education");
+
+  // Detours (forward recovery; not dead ends)
+  const traps = [
+    ["weak_verbs","Weak verbs"],
+    ["no_metrics","No metrics"],
+    ["tables_layout","Tables/columns"],
+    ["keyword_dump","Keyword dumping"]
+  ];
+
+  let count = 0;
+  for (const anchor of ["exp_role","exp_verbs","exp_metrics","exp_keywords"]){
+    if (Math.random() < 0.75){
+      count++;
+      const t = traps[Math.floor(Math.random()*traps.length)];
+      const id = "exp_s" + count;
+      addNode(id, t[1], "trap:" + t[0]);
+      detours.push(id);
+
+      connect(anchor, id);
+
+      // Recover to one of two hubs for variety
+      // (keeps it a network, not “only one right next step”)
+      connect(id, Math.random() < 0.5 ? "exp_format" : "exp_keywords");
+    }
+  }
+
+  sanityCheckGraph();
+}
+
+/* ---------- State ---------- */
+function newState(){
+  return {
+    current: "header",
+    visited: new Set(["header"]),
+    moves: 0,
+    trapTypes: new Set(),
+    path: ["header"]
+  };
+}
+let state = newState();
+
+/* ---------- UI helpers ---------- */
+function makeNode(id, textOverride=null, extraClass=""){
+  const el = document.createElement("span");
+  el.className = "node " + extraClass;
+  el.textContent = textOverride ?? nodes[id].label;
+  el.onclick = () => move(id);
+  nodes[id].el = el;
+  return el;
+}
+
+function flashBad(id){
+  const el = nodes[id]?.el;
+  if (!el) return;
+  el.classList.add("bad");
+  setTimeout(() => el.classList.remove("bad"), 350);
+}
+
+/* ---------- Render ---------- */
+function render(){
+  for (const id in nodes){
+    const el = nodes[id].el;
+    if (!el) continue;
+    el.className = "node disabled" + (el.classList.contains("detour") ? " detour" : "");
+  }
+
+  for (const id of state.visited){
+    const el = nodes[id]?.el;
+    if (el) el.classList.add("visited","disabled");
+  }
+
+  const curEl = nodes[state.current]?.el;
+  if (curEl) curEl.classList.add("current","visited","disabled");
+
+  const neighbors = graph[state.current] ?? [];
+  for (const n of neighbors){
+    const el = nodes[n]?.el;
+    if (el){
+      el.classList.remove("disabled");
+      el.classList.add("available");
+    }
+  }
+
+  document.getElementById("moveCount").textContent = String(state.moves);
+  const score = Math.max(0, 100 - state.moves - (state.trapTypes.size * 8));
+  document.getElementById("score").textContent = String(score);
+  document.getElementById("pathText").textContent = state.path.join(" → ");
+
+  if (DEBUG){
+    console.log("Current:", state.current, "Neighbors:", neighbors);
+    document.getElementById("status").textContent = `Current: ${state.current} | Neighbors: ${neighbors.join(", ")}`;
+  } else {
+    document.getElementById("status").textContent = "";
+  }
+}
+
+/* ---------- Move ---------- */
+function move(id){
+  const neighbors = graph[state.current] ?? [];
+  if (!neighbors.includes(id)) return;
+
+  state.moves++;
+  state.current = id;
+  state.visited.add(id);
+  state.path.push(id);
+
+  const tag = nodes[id]?.tag ?? "";
+  if (tag.startsWith("trap:")){
+    state.trapTypes.add(tag);
+    render();        // render first
+    flashBad(id);    // then flash red
+  } else {
+    render();
+  }
+}
+
+/* ---------- Build Resume DOM ---------- */
+function clearAll(){
+  for (const key of ["headerLine","summaryLine","skillsLine","projectsLine","certsLine","educationLine","expBackbone","expDetours"]){
+    document.getElementById(key).innerHTML = "";
+  }
+}
+
+function buildResume(){
+  clearAll();
+
+  document.getElementById("headerLine").append(
+    makeNode("header","FIRST LAST"),
+    document.createTextNode(" • Springfield, MA • email@example.com")
+  );
+
+  document.getElementById("summaryLine").append(
+    makeNode("summary","Data-driven analytics professional")
+  );
+
+  document.getElementById("skillsLine").append(
+    makeNode("skills","GA4 • SEO • Reporting")
+  );
+
+  const ul = document.getElementById("expBackbone");
+
+  ul.appendChild(document.createElement("li")).appendChild(makeNode("exp_entry"));
+  ["exp_role","exp_verbs","exp_metrics","exp_keywords","exp_format"].forEach(id => {
+    ul.appendChild(document.createElement("li")).appendChild(makeNode(id));
+  });
+  ul.appendChild(document.createElement("li")).appendChild(makeNode("exp_exit"));
+
+  const d = document.getElementById("expDetours");
+  detours.forEach(id => {
+    d.appendChild(makeNode(id, null, "detour"));
+  });
+
+  document.getElementById("projectsLine").append(makeNode("projects","ATS Resume Maze"));
+  document.getElementById("certsLine").append(makeNode("certifications","Google Analytics Cert"));
+  document.getElementById("educationLine").append(makeNode("education","B.A., Communication"));
+}
+
+/* ---------- Reset ---------- */
+function reset(){
+  try{
+    buildGraph();
+    buildResume();
+    state = newState();
+    render();
+  } catch (e){
+    console.error(e);
+    document.getElementById("status").textContent = "ERROR: Open Console (red text) for details.";
+  }
+}
+document.getElementById("resetBtn").onclick = reset;
+
+/* ---------- Init ---------- */
+reset();
+</script>
+
+</body>
+</html>
