@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Block Style Stable</title>
+<title>ATS Resume Maze — Reflective Build</title>
 
 <style>
 :root{
@@ -17,7 +17,6 @@
   --teal:#0A6E6E;
   --red:#ff6b6b;
 }
-
 body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
 
 .rail{
@@ -25,6 +24,7 @@ body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--in
   width:340px; height:100vh;
   background:var(--nav); color:#fff;
   padding:16px; box-sizing:border-box;
+  overflow:auto;
 }
 
 .stat{ margin:8px 0; font-family:Arial; }
@@ -41,6 +41,16 @@ button{
   display:block; background:rgba(255,255,255,.12);
   padding:8px; border-radius:6px; margin-top:6px;
   word-break:break-word;
+}
+
+#reflectionBox{
+  margin-top:20px;
+  padding:12px;
+  background:rgba(255,255,255,.1);
+  border-radius:8px;
+  font-size:.9rem;
+  line-height:1.4;
+  display:none;
 }
 
 .page{ margin-left:340px; padding:30px 20px; }
@@ -60,8 +70,6 @@ button{
   padding-bottom:4px;
   margin-bottom:10px;
 }
-
-/* BLOCK NODES */
 
 .node{
   display:block;
@@ -110,6 +118,8 @@ button{
     <strong>Path:</strong>
     <code id="pathText">header</code>
   </div>
+
+  <div id="reflectionBox"></div>
 </div>
 
 <div class="page">
@@ -160,38 +170,42 @@ button{
 
 <script>
 
-/* -------- Context Library -------- */
+/* ---------- Robust Career Content ---------- */
 
-const contexts = [
-{
-role:"Data Analyst, Meridian Insights",
-summary:"Detail-oriented analyst translating complex datasets into actionable decisions.",
-verbsStrong:"Analyzed cross-channel performance data to identify growth opportunities.",
-verbsWeak:"Responsible for looking at reports and helping with analytics.",
-metricsStrong:"Improved campaign ROI by 18% through predictive modeling.",
-metricsWeak:"Helped improve results over time.",
-keywordsStrong:"Applied SQL, Tableau, and A/B testing aligned with job description.",
-keywordsWeak:"Experienced with many tools.",
-formatStrong:"Consistent bullet formatting, aligned dates, ATS-friendly layout.",
-formatWeak:"Mixed punctuation and inconsistent spacing."
-},
-{
-role:"Marketing Coordinator, BrightWave Agency",
-summary:"Strategic communicator driving measurable audience growth.",
-verbsStrong:"Launched integrated campaigns across digital platforms.",
-verbsWeak:"Helped with marketing tasks.",
-metricsStrong:"Increased engagement 35% within six months.",
-metricsWeak:"Engagement improved significantly.",
-keywordsStrong:"Aligned resume language with SEO and GA4 terminology.",
-keywordsWeak:"Added lots of marketing keywords.",
-formatStrong:"Clear hierarchy and consistent tense.",
-formatWeak:"Overused bold and inconsistent capitalization."
-}
-];
+const resumeContent = {
+header:"Jordan Avery • Springfield, MA • jordan@example.com",
 
-let activeContext;
+summary:"Strategic professional with progressive experience across analytics, marketing, and operations environments.",
 
-/* -------- Engine -------- */
+skills:"SQL | Tableau | SEO | GA4 | Process Optimization | Stakeholder Communication",
+
+roles:
+`Senior Data Analyst — Meridian Insights (2021–Present)
+• Led cross-functional analytics initiatives supporting national campaigns.
+• Analyzed multi-channel data to inform executive decisions.
+
+Marketing Coordinator — BrightWave Agency (2018–2021)
+• Managed digital campaigns across email and social platforms.
+• Coordinated content calendar and performance reporting.
+
+Operations Intern — Northstar Logistics (2017–2018)
+• Supported supply chain reporting.
+• Assisted with workflow optimization initiatives.`,
+
+verbsStrong:"Led, analyzed, optimized, coordinated, implemented.",
+verbsWeak:"Helped, responsible for, assisted with, worked on.",
+
+metricsStrong:"Increased ROI 18%; boosted engagement 35%; reduced fulfillment time 22%.",
+metricsWeak:"Improved performance significantly.",
+
+keywordsStrong:"Integrated SQL, Tableau, GA4, and SEO terminology aligned with job descriptions.",
+keywordsWeak:"Included many industry buzzwords.",
+
+formatStrong:"Consistent dates, aligned bullets, no tables, standard section headers.",
+formatWeak:"Mixed dash styles — inconsistent spacing — uneven bullet formatting."
+};
+
+/* ---------- Engine ---------- */
 
 let nodes={}, graph={}, detours=[];
 
@@ -208,45 +222,41 @@ function connect(a,b){
 function buildGraph(){
 nodes={}; graph={}; detours=[];
 
-addNode("header","Jordan Avery • Springfield, MA • jordan@example.com");
-addNode("summary",activeContext.summary);
-addNode("skills","Core Competencies listed here.");
-addNode("projects","Interactive ATS Resume Maze");
-addNode("certifications","Professional Certification");
-addNode("education","B.A., Communication Studies");
+addNode("header",resumeContent.header);
+addNode("summary",resumeContent.summary);
+addNode("skills",resumeContent.skills);
+addNode("projects","Interactive ATS Resume Maze Project");
+addNode("certifications","Google Analytics Certified");
+addNode("education","B.A., Communication Studies — UMass");
 
 connect("header","summary");
 connect("summary","skills");
 
 addNode("exp_entry","Enter Experience");
 addNode("exp_exit","Exit Experience");
-
 connect("skills","exp_entry");
 
-addNode("exp_role",activeContext.role);
-addNode("exp_verbs",activeContext.verbsStrong + " | Contrast: " + activeContext.verbsWeak);
-addNode("exp_metrics",activeContext.metricsStrong + " | Contrast: " + activeContext.metricsWeak);
-addNode("exp_keywords",activeContext.keywordsStrong + " | Contrast: " + activeContext.keywordsWeak);
-addNode("exp_format",activeContext.formatStrong + " | Contrast: " + activeContext.formatWeak);
+addNode("exp_role",resumeContent.roles);
+addNode("exp_verbs","Strong verbs: " + resumeContent.verbsStrong + " | Weak contrast: " + resumeContent.verbsWeak);
+addNode("exp_metrics","Quantified: " + resumeContent.metricsStrong + " | Vague contrast: " + resumeContent.metricsWeak);
+addNode("exp_keywords","Aligned: " + resumeContent.keywordsStrong + " | Contrast: " + resumeContent.keywordsWeak);
+addNode("exp_format","Clean: " + resumeContent.formatStrong + " | Contrast: " + resumeContent.formatWeak);
 
 connect("exp_entry","exp_role");
-
 connect("exp_role","exp_metrics");
 connect("exp_metrics","exp_verbs");
 connect("exp_verbs","exp_keywords");
 connect("exp_keywords","exp_format");
-
 connect("exp_role","exp_keywords");
 connect("exp_format","exp_verbs");
 connect("exp_verbs","exp_metrics");
-
 connect("exp_format","exp_exit");
 
 connect("exp_exit","projects");
 connect("projects","certifications");
 connect("certifications","education");
 
-/* Traps */
+/* traps */
 const traps=[
 ["weak_verbs","Weak verbs"],
 ["no_metrics","No metrics"],
@@ -315,6 +325,10 @@ if (state.visited.has("exp_metrics")) baseScore += 5;
 document.getElementById("moveCount").textContent=state.moves;
 document.getElementById("score").textContent=Math.max(0,baseScore);
 document.getElementById("pathText").textContent=state.path.join(" → ");
+
+if(state.current==="education"){
+generateReflection();
+}
 }
 
 function flash(id){
@@ -338,6 +352,30 @@ flash(id);
 }else{
 render();
 }
+}
+
+function generateReflection(){
+let box=document.getElementById("reflectionBox");
+box.style.display="block";
+
+let sequence = state.path.join(" → ");
+let reflection = "<strong>Reflective Analysis</strong><br><br>";
+
+if(state.path.indexOf("exp_metrics") < state.path.indexOf("exp_verbs")){
+reflection += "You foregrounded measurable impact early in your drafting sequence. This suggests an outcomes-first mindset aligned with data-driven hiring contexts.<br><br>";
+}else{
+reflection += "You emphasized descriptive clarity before quantification. Consider how earlier metrics might influence recruiter scanning behavior.<br><br>";
+}
+
+if(state.trapTypes.size > 0){
+reflection += "You encountered drafting risks related to " + Array.from(state.trapTypes).map(t=>t.replace("trap:","")).join(", ") + ". Reflect on how these rhetorical missteps affect readability and ATS parsing.<br><br>";
+}else{
+reflection += "You avoided common drafting traps, demonstrating strong rhetorical control over structure and clarity.<br><br>";
+}
+
+reflection += "Your full path:<br>" + sequence;
+
+box.innerHTML = reflection;
 }
 
 function buildResume(){
@@ -366,7 +404,7 @@ document.getElementById("educationLine").append(makeNode("education"));
 }
 
 function reset(){
-activeContext = contexts[Math.floor(Math.random()*contexts.length)];
+document.getElementById("reflectionBox").style.display="none";
 buildGraph();
 buildResume();
 state=newState();
