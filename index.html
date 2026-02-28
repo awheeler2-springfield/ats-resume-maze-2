@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Reflective Build</title>
+<title>ATS Resume Maze — Chunk-Based Decisions + Debrief</title>
 
 <style>
 :root{
@@ -17,44 +17,55 @@
   --teal:#0A6E6E;
   --red:#ff6b6b;
 }
+
 body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
 
 .rail{
   position:fixed; left:0; top:0;
-  width:340px; height:100vh;
+  width:360px; height:100vh;
   background:var(--nav); color:#fff;
   padding:16px; box-sizing:border-box;
   overflow:auto;
 }
-
-.stat{ margin:8px 0; font-family:Arial; }
-
+.rail h2{ margin:0 0 12px; font-family:Arial, sans-serif; }
+.stat{ margin:8px 0; font-family:Arial, sans-serif; }
 button{
   cursor:pointer; border:none;
   padding:10px 12px;
   font-weight:bold; border-radius:6px;
   background:#FFFBF0; color:var(--nav);
 }
-
-#pathBox{ margin-top:12px; font-family:Arial; font-size:.85rem; }
+#pathBox{ margin-top:12px; font-family:Arial, sans-serif; font-size:.85rem; }
 #pathBox code{
   display:block; background:rgba(255,255,255,.12);
   padding:8px; border-radius:6px; margin-top:6px;
   word-break:break-word;
 }
 
-#reflectionBox{
-  margin-top:20px;
+#debriefBox{
+  margin-top:14px;
   padding:12px;
-  background:rgba(255,255,255,.1);
-  border-radius:8px;
-  font-size:.9rem;
-  line-height:1.4;
+  border-radius:10px;
+  background:rgba(255,255,255,.10);
   display:none;
+  font-family:Arial, sans-serif;
+  font-size:.92rem;
+  line-height:1.35;
+}
+#debriefBox h3{
+  margin:0 0 8px;
+  font-size:1rem;
+}
+#debriefBox .mini{
+  opacity:.9;
+  font-size:.88rem;
+}
+#debriefBox ul{
+  margin:8px 0 0 18px;
+  padding:0;
 }
 
-.page{ margin-left:340px; padding:30px 20px; }
-
+.page{ margin-left:360px; padding:30px 20px; }
 .resume{
   max-width:980px; margin:0 auto;
   background:var(--paper);
@@ -63,7 +74,6 @@ button{
 }
 
 .section{ margin-top:22px; }
-
 .section-title{
   font-weight:bold;
   border-bottom:1px solid #000;
@@ -71,38 +81,64 @@ button{
   margin-bottom:10px;
 }
 
+/* Chunk nodes (inline) */
+.chunk{
+  display:inline-block;
+  padding:4px 8px;
+  margin:2px 4px 2px 0;
+  border-radius:999px;
+  background:#fafafa;
+  border:1px solid #e8e8e8;
+  cursor:pointer;
+  font-family:Arial, sans-serif;
+  font-size:.92rem;
+  vertical-align:baseline;
+}
+.chunk.disabled{ pointer-events:none; opacity:.45; }
+.chunk.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
+.chunk.visited{ background:var(--yellow); border-color:#e6d25e; }
+.chunk.current{ background:var(--tealbg); border-color:var(--teal); }
+.chunk.bad{ background:var(--red)!important; color:#fff; border-color:#d94c4c!important; }
+
+/* Section nodes (block) for non-Experience */
 .node{
   display:block;
   padding:10px 12px;
-  margin-bottom:8px;
+  margin:8px 0;
   border-radius:6px;
   background:#fafafa;
+  border:1px solid #e8e8e8;
   cursor:pointer;
-  transition:.15s ease;
+  font-family:Arial, sans-serif;
 }
+.node.disabled{ pointer-events:none; opacity:.45; }
+.node.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
+.node.visited{ background:var(--yellow); border-color:#e6d25e; }
+.node.current{ background:var(--tealbg); border-color:var(--teal); }
+.node.bad{ background:var(--red)!important; color:#fff; border-color:#d94c4c!important; }
 
-.node.disabled{ pointer-events:none; opacity:.4; }
-.node.available{ outline:2px solid rgba(10,110,110,.35); }
-.node.visited{ background:var(--yellow); }
-.node.current{ background:var(--tealbg); outline:2px solid var(--teal); }
-.node.bad{ background:var(--red)!important; color:#fff; }
-
-.detour{
-  font-size:.85rem;
-  background:#f2f2f2;
-  border:1px solid #e3e3e3;
-  padding:6px 10px;
-  border-radius:999px;
-  display:inline-block;
-  margin:4px 6px 4px 0;
-}
-
-.exp-grid{
+.exp-box{
   margin-top:10px;
   padding:12px;
   border:1px solid var(--ui);
-  border-radius:8px;
+  border-radius:10px;
   background:#fafafa;
+}
+
+.bullet{
+  margin:10px 0;
+  font-family:Georgia, serif;
+}
+.bullet .lead{
+  display:inline-block;
+  width:18px;
+}
+
+.hint{
+  font-family:Arial, sans-serif;
+  font-size:.88rem;
+  opacity:.85;
+  margin-top:10px;
 }
 </style>
 </head>
@@ -112,6 +148,7 @@ button{
   <h2>ATS Resume Maze</h2>
   <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
   <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
+  <div class="stat"><strong>Trap hits:</strong> <span id="trapCount">0</span></div>
   <button id="resetBtn">Reset Run</button>
 
   <div id="pathBox">
@@ -119,300 +156,453 @@ button{
     <code id="pathText">header</code>
   </div>
 
-  <div id="reflectionBox"></div>
+  <div id="debriefBox"></div>
 </div>
 
 <div class="page">
 <div class="resume">
 
-<div class="section">
-<div class="section-title">HEADER</div>
-<div id="headerLine"></div>
-</div>
+  <div class="section">
+    <div class="section-title">HEADER</div>
+    <div id="headerLine"></div>
+  </div>
 
-<div class="section">
-<div class="section-title">SUMMARY</div>
-<div id="summaryLine"></div>
-</div>
+  <div class="section">
+    <div class="section-title">SUMMARY</div>
+    <div id="summaryLine"></div>
+  </div>
 
-<div class="section">
-<div class="section-title">SKILLS</div>
-<div id="skillsLine"></div>
-</div>
+  <div class="section">
+    <div class="section-title">SKILLS</div>
+    <div id="skillsLine"></div>
+  </div>
 
-<div class="section">
-<div class="section-title">PROFESSIONAL EXPERIENCE</div>
-<div id="expBackbone"></div>
+  <div class="section">
+    <div class="section-title">PROFESSIONAL EXPERIENCE</div>
 
-<div class="exp-grid">
-<strong>Drafting Risks</strong>
-<div id="expDetours"></div>
-</div>
-</div>
+    <div class="exp-box">
+      <div id="expEntry"></div>
 
-<div class="section">
-<div class="section-title">PROJECTS</div>
-<div id="projectsLine"></div>
-</div>
+      <!-- Role header line (single block node) -->
+      <div id="expRole"></div>
 
-<div class="section">
-<div class="section-title">CERTIFICATIONS</div>
-<div id="certsLine"></div>
-</div>
+      <!-- Chunk-based bullets -->
+      <div class="bullet">
+        <span class="lead">•</span>
+        <span id="b1"></span>
+      </div>
+      <div class="bullet">
+        <span class="lead">•</span>
+        <span id="b2"></span>
+      </div>
+      <div class="bullet">
+        <span class="lead">•</span>
+        <span id="b3"></span>
+      </div>
 
-<div class="section">
-<div class="section-title">EDUCATION</div>
-<div id="educationLine"></div>
-</div>
+      <div id="expExit" style="margin-top:10px;"></div>
+
+      <div class="hint">
+        You can always recover from a red choice, but it costs score and signals an ATS/rhetorical risk in the debrief.
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">PROJECTS</div>
+    <div id="projectsLine"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">CERTIFICATIONS</div>
+    <div id="certsLine"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">EDUCATION</div>
+    <div id="educationLine"></div>
+  </div>
 
 </div>
 </div>
 
 <script>
+/* =========================
+   ENGINE: nodes + graph
+========================= */
 
-/* ---------- Robust Career Content ---------- */
+let nodes = {};   // id -> { id, label, tag, el, kind }
+let graph = {};   // id -> [neighbor ids]
+let state;
 
-const resumeContent = {
-header:"Jordan Avery • Springfield, MA • jordan@example.com",
+/* tags
+  - "section:*" for backbone sections
+  - "good:*" for good rhetorical moves
+  - "trap:*" for wrong / risky rhetorical moves
+*/
 
-summary:"Strategic professional with progressive experience across analytics, marketing, and operations environments.",
-
-skills:"SQL | Tableau | SEO | GA4 | Process Optimization | Stakeholder Communication",
-
-roles:
-`Senior Data Analyst — Meridian Insights (2021–Present)
-• Led cross-functional analytics initiatives supporting national campaigns.
-• Analyzed multi-channel data to inform executive decisions.
-
-Marketing Coordinator — BrightWave Agency (2018–2021)
-• Managed digital campaigns across email and social platforms.
-• Coordinated content calendar and performance reporting.
-
-Operations Intern — Northstar Logistics (2017–2018)
-• Supported supply chain reporting.
-• Assisted with workflow optimization initiatives.`,
-
-verbsStrong:"Led, analyzed, optimized, coordinated, implemented.",
-verbsWeak:"Helped, responsible for, assisted with, worked on.",
-
-metricsStrong:"Increased ROI 18%; boosted engagement 35%; reduced fulfillment time 22%.",
-metricsWeak:"Improved performance significantly.",
-
-keywordsStrong:"Integrated SQL, Tableau, GA4, and SEO terminology aligned with job descriptions.",
-keywordsWeak:"Included many industry buzzwords.",
-
-formatStrong:"Consistent dates, aligned bullets, no tables, standard section headers.",
-formatWeak:"Mixed dash styles — inconsistent spacing — uneven bullet formatting."
-};
-
-/* ---------- Engine ---------- */
-
-let nodes={}, graph={}, detours=[];
-
-function addNode(id,label,tag=""){
-  nodes[id]={id,label,tag,el:null};
-  graph[id]=[];
+function addNode(id, label, tag="", kind="node"){
+  nodes[id] = { id, label, tag, el: null, kind };
+  graph[id] = [];
 }
 
 function connect(a,b){
-  if(!graph[a].includes(b))graph[a].push(b);
-  if(!graph[b].includes(a))graph[b].push(a);
-}
-
-function buildGraph(){
-nodes={}; graph={}; detours=[];
-
-addNode("header",resumeContent.header);
-addNode("summary",resumeContent.summary);
-addNode("skills",resumeContent.skills);
-addNode("projects","Interactive ATS Resume Maze Project");
-addNode("certifications","Google Analytics Certified");
-addNode("education","B.A., Communication Studies — UMass");
-
-connect("header","summary");
-connect("summary","skills");
-
-addNode("exp_entry","Enter Experience");
-addNode("exp_exit","Exit Experience");
-connect("skills","exp_entry");
-
-addNode("exp_role",resumeContent.roles);
-addNode("exp_verbs","Strong verbs: " + resumeContent.verbsStrong + " | Weak contrast: " + resumeContent.verbsWeak);
-addNode("exp_metrics","Quantified: " + resumeContent.metricsStrong + " | Vague contrast: " + resumeContent.metricsWeak);
-addNode("exp_keywords","Aligned: " + resumeContent.keywordsStrong + " | Contrast: " + resumeContent.keywordsWeak);
-addNode("exp_format","Clean: " + resumeContent.formatStrong + " | Contrast: " + resumeContent.formatWeak);
-
-connect("exp_entry","exp_role");
-connect("exp_role","exp_metrics");
-connect("exp_metrics","exp_verbs");
-connect("exp_verbs","exp_keywords");
-connect("exp_keywords","exp_format");
-connect("exp_role","exp_keywords");
-connect("exp_format","exp_verbs");
-connect("exp_verbs","exp_metrics");
-connect("exp_format","exp_exit");
-
-connect("exp_exit","projects");
-connect("projects","certifications");
-connect("certifications","education");
-
-/* traps */
-const traps=[
-["weak_verbs","Weak verbs"],
-["no_metrics","No metrics"],
-["tables_layout","Tables/columns"],
-["keyword_dump","Keyword dumping"]
-];
-
-let count=0;
-for(let anchor of ["exp_role","exp_verbs","exp_metrics","exp_keywords"]){
-if(Math.random()<0.7){
-count++;
-let t=traps[Math.floor(Math.random()*traps.length)];
-let id="exp_s"+count;
-addNode(id,t[1],"trap:"+t[0]);
-detours.push(id);
-connect(anchor,id);
-connect(id,"exp_format");
-connect(id,"exp_keywords");
-}
-}
+  if (!graph[a].includes(b)) graph[a].push(b);
+  if (!graph[b].includes(a)) graph[b].push(a);
 }
 
 function newState(){
-return{
-current:"header",
-visited:new Set(["header"]),
-moves:0,
-trapTypes:new Set(),
-path:["header"]
-};
+  return {
+    current: "header",
+    visited: new Set(["header"]),
+    moves: 0,
+    trapTypes: new Set(),
+    path: ["header"],
+    goodTypes: new Set() // track good choices categories
+  };
 }
 
-let state;
+/* =========================
+   CONTENT MODEL
+   - Experience is chunk-based:
+     each bullet is a 3-step chain,
+     each step offers GOOD vs TRAP alternative.
+========================= */
 
-function makeNode(id){
-let el=document.createElement("div");
-el.className="node";
-el.textContent=nodes[id].label;
-el.onclick=()=>move(id);
-nodes[id].el=el;
-return el;
+function buildGraphAndContent(){
+  nodes = {}; graph = {};
+
+  // Backbone sections (block nodes)
+  addNode("header", "Jordan Avery • Springfield, MA • jordan@example.com", "section:header", "node");
+  addNode("summary", "Detail-oriented analyst translating complex datasets into actionable decisions.", "section:summary", "node");
+  addNode("skills", "SQL • Tableau • GA4 • SEO • Reporting • Stakeholder Communication", "section:skills", "node");
+  addNode("projects", "ATS Resume Maze — interactive click-through adjacency game teaching ATS optimization.", "section:projects", "node");
+  addNode("certifications", "Google Analytics Certification • SEO Foundations", "section:certifications", "node");
+  addNode("education", "B.A., Communication Studies — Institution Name", "section:education", "node");
+
+  connect("header","summary");
+  connect("summary","skills");
+
+  // Experience entry/exit (block nodes)
+  addNode("exp_entry","Enter Experience","section:exp_entry","node");
+  addNode("exp_role","Data Analyst — Meridian Insights (2021–Present)","good:role","node");
+  addNode("exp_exit","Exit Experience","section:exp_exit","node");
+
+  connect("skills","exp_entry");
+  connect("exp_entry","exp_role");
+
+  // We will force completion through exp_exit by gating to Projects
+  connect("exp_exit","projects");
+  connect("projects","certifications");
+  connect("certifications","education");
+
+  /* ---------- Chunk chains (3 bullets x 3 steps) ----------
+     Each step: GOOD node and TRAP node
+     Both progress to the same next step (so traps are recoverable),
+     but trap is tagged and penalized.
+  */
+
+  // Bullet 1: Verb precision vs weak verb, plus scope specificity vs vague
+  addNode("b1_s1_g","Analyzed","good:verbs","chunk");
+  addNode("b1_s1_t","Worked on","trap:weak_verbs","chunk");
+
+  addNode("b1_s2_g","cross-channel performance data","good:specificity","chunk");
+  addNode("b1_s2_t","various reports","trap:vagueness","chunk");
+
+  addNode("b1_s3_g","to identify growth opportunities.","good:purpose","chunk");
+  addNode("b1_s3_t","and helped where needed.","trap:low_signal","chunk");
+
+  // Bullet 2: Metrics vs no-metrics, and quantified framing vs fluffy
+  addNode("b2_s1_g","Improved campaign ROI","good:metrics","chunk");
+  addNode("b2_s1_t","Improved results","trap:no_metrics","chunk");
+
+  addNode("b2_s2_g","by 18%","good:metrics","chunk");
+  addNode("b2_s2_t","a lot","trap:vagueness","chunk");
+
+  addNode("b2_s3_g","through predictive modeling.","good:method","chunk");
+  addNode("b2_s3_t","using different approaches.","trap:low_signal","chunk");
+
+  // Bullet 3: Keywords alignment vs stuffing, and ATS-safe formatting vs risky formatting
+  addNode("b3_s1_g","Aligned experience language with","good:alignment","chunk");
+  addNode("b3_s1_t","Added keywords like","trap:keyword_dump","chunk");
+
+  addNode("b3_s2_g","SQL, Tableau, and A/B testing","good:alignment","chunk");
+  addNode("b3_s2_t","SQL Tableau Python Agile Scrum KPI synergy","trap:keyword_dump","chunk");
+
+  addNode("b3_s3_g","using consistent bullet formatting.","good:formatting","chunk");
+  addNode("b3_s3_t","in a two-column layout with icons.","trap:tables_layout","chunk");
+
+  /* ---------- Wiring (choices + progress) ----------
+     Start bullet chains from exp_role; allow strategy choice:
+       - impact-first: go to metrics chain first
+       - ATS-first: go to keywords/format chain first
+       - narrative-first: go to verbs chain first
+  */
+
+  // Entry points to chains (choose one first)
+  connect("exp_role","b1_s1_g"); connect("exp_role","b1_s1_t");
+  connect("exp_role","b2_s1_g"); connect("exp_role","b2_s1_t");
+  connect("exp_role","b3_s1_g"); connect("exp_role","b3_s1_t");
+
+  // Bullet 1 chain
+  connect("b1_s1_g","b1_s2_g"); connect("b1_s1_g","b1_s2_t");
+  connect("b1_s1_t","b1_s2_g"); connect("b1_s1_t","b1_s2_t");
+
+  connect("b1_s2_g","b1_s3_g"); connect("b1_s2_g","b1_s3_t");
+  connect("b1_s2_t","b1_s3_g"); connect("b1_s2_t","b1_s3_t");
+
+  // Bullet 2 chain
+  connect("b2_s1_g","b2_s2_g"); connect("b2_s1_g","b2_s2_t");
+  connect("b2_s1_t","b2_s2_g"); connect("b2_s1_t","b2_s2_t");
+
+  connect("b2_s2_g","b2_s3_g"); connect("b2_s2_g","b2_s3_t");
+  connect("b2_s2_t","b2_s3_g"); connect("b2_s2_t","b2_s3_t");
+
+  // Bullet 3 chain
+  connect("b3_s1_g","b3_s2_g"); connect("b3_s1_g","b3_s2_t");
+  connect("b3_s1_t","b3_s2_g"); connect("b3_s1_t","b3_s2_t");
+
+  connect("b3_s2_g","b3_s3_g"); connect("b3_s2_g","b3_s3_t");
+  connect("b3_s2_t","b3_s3_g"); connect("b3_s2_t","b3_s3_t");
+
+  // Allow re-ordering between bullets after completing any chain end
+  // (Strategic non-linearity without letting you skip Experience entirely)
+  const ends = ["b1_s3_g","b1_s3_t","b2_s3_g","b2_s3_t","b3_s3_g","b3_s3_t"];
+  for (const end of ends){
+    connect(end,"b1_s1_g"); connect(end,"b1_s1_t");
+    connect(end,"b2_s1_g"); connect(end,"b2_s1_t");
+    connect(end,"b3_s1_g"); connect(end,"b3_s1_t");
+    connect(end,"exp_exit"); // Exit is available once you've reached any end.
+  }
+
+  // But to keep it meaningful, exiting early will be penalized in debrief (we handle in scoring/debrief).
+}
+
+/* =========================
+   DOM BUILD
+========================= */
+
+function makeEl(id){
+  const n = nodes[id];
+  let el;
+
+  if (n.kind === "chunk"){
+    el = document.createElement("span");
+    el.className = "chunk";
+  } else {
+    el = document.createElement("div");
+    el.className = "node";
+  }
+
+  el.textContent = n.label;
+  el.onclick = () => move(id);
+  n.el = el;
+  return el;
+}
+
+function buildDOM(){
+  // clear containers
+  const clearIds = ["headerLine","summaryLine","skillsLine","projectsLine","certsLine","educationLine","expEntry","expRole","expExit","b1","b2","b3"];
+  for (const cid of clearIds) document.getElementById(cid).innerHTML = "";
+
+  // sections (block nodes)
+  document.getElementById("headerLine").append(makeEl("header"));
+  document.getElementById("summaryLine").append(makeEl("summary"));
+  document.getElementById("skillsLine").append(makeEl("skills"));
+
+  // Experience
+  document.getElementById("expEntry").append(makeEl("exp_entry"));
+  document.getElementById("expRole").append(makeEl("exp_role"));
+
+  // Bullet 1 chunk placeholders (we render all chunks, but only neighbors become clickable)
+  document.getElementById("b1").append(
+    makeEl("b1_s1_g"), makeEl("b1_s1_t"),
+    makeEl("b1_s2_g"), makeEl("b1_s2_t"),
+    makeEl("b1_s3_g"), makeEl("b1_s3_t")
+  );
+
+  document.getElementById("b2").append(
+    makeEl("b2_s1_g"), makeEl("b2_s1_t"),
+    makeEl("b2_s2_g"), makeEl("b2_s2_t"),
+    makeEl("b2_s3_g"), makeEl("b2_s3_t")
+  );
+
+  document.getElementById("b3").append(
+    makeEl("b3_s1_g"), makeEl("b3_s1_t"),
+    makeEl("b3_s2_g"), makeEl("b3_s2_t"),
+    makeEl("b3_s3_g"), makeEl("b3_s3_t")
+  );
+
+  document.getElementById("expExit").append(makeEl("exp_exit"));
+
+  // Remaining sections
+  document.getElementById("projectsLine").append(makeEl("projects"));
+  document.getElementById("certsLine").append(makeEl("certifications"));
+  document.getElementById("educationLine").append(makeEl("education"));
+}
+
+/* =========================
+   RENDER / MOVE / SCORE
+========================= */
+
+function flashBad(id){
+  const el = nodes[id]?.el;
+  if (!el) return;
+  el.classList.add("bad");
+  setTimeout(() => el.classList.remove("bad"), 350);
 }
 
 function render(){
-for(let id in nodes){
-let el=nodes[id].el;
-if(!el)continue;
-el.className="node disabled";
-}
+  // disable all
+  for (const id in nodes){
+    const el = nodes[id].el;
+    if (!el) continue;
+    el.className = (nodes[id].kind === "chunk" ? "chunk" : "node") + " disabled";
+    // persist trap red if visited & trap
+    if (state.visited.has(id) && nodes[id].tag.startsWith("trap:")) el.classList.add("bad");
+    if (state.visited.has(id) && !nodes[id].tag.startsWith("trap:")) el.classList.add("visited");
+  }
 
-state.visited.forEach(id=>{
-nodes[id].el.classList.add("visited","disabled");
-});
+  // mark current
+  const curEl = nodes[state.current].el;
+  curEl.classList.add("current");
+  curEl.classList.remove("disabled");
 
-let cur=nodes[state.current].el;
-cur.classList.add("current","visited","disabled");
+  // enable neighbors
+  const neighbors = graph[state.current] || [];
+  for (const nid of neighbors){
+    const el = nodes[nid]?.el;
+    if (!el) continue;
+    el.classList.remove("disabled");
+    el.classList.add("available");
+  }
 
-graph[state.current].forEach(id=>{
-nodes[id].el.classList.remove("disabled");
-nodes[id].el.classList.add("available");
-});
+  // scoring
+  const trapPenalty = state.trapTypes.size * 8;
+  const base = 100 - state.moves - trapPenalty;
 
-let baseScore = 100 - state.moves - (state.trapTypes.size * 8);
-if (state.visited.has("exp_metrics")) baseScore += 5;
+  // reward: if they chose any good:metrics at least once, +5
+  const metricBonus = state.goodTypes.has("good:metrics") ? 5 : 0;
 
-document.getElementById("moveCount").textContent=state.moves;
-document.getElementById("score").textContent=Math.max(0,baseScore);
-document.getElementById("pathText").textContent=state.path.join(" → ");
+  // mild penalty if they exit experience before touching at least 2 bullet-ends
+  const endsVisited = ["b1_s3_g","b1_s3_t","b2_s3_g","b2_s3_t","b3_s3_g","b3_s3_t"]
+    .filter(id => state.visited.has(id)).length;
+  const earlyExitPenalty = (state.visited.has("exp_exit") && endsVisited < 2) ? 6 : 0;
 
-if(state.current==="education"){
-generateReflection();
-}
-}
+  const score = Math.max(0, base + metricBonus - earlyExitPenalty);
 
-function flash(id){
-let el=nodes[id].el;
-el.classList.add("bad");
-setTimeout(()=>{el.classList.remove("bad");},350);
+  document.getElementById("moveCount").textContent = String(state.moves);
+  document.getElementById("trapCount").textContent = String(state.trapTypes.size);
+  document.getElementById("score").textContent = String(score);
+  document.getElementById("pathText").textContent = state.path.join(" → ");
+
+  if (state.current === "education") showDebrief({ score, endsVisited, earlyExitPenalty, metricBonus });
 }
 
 function move(id){
-if(!graph[state.current].includes(id))return;
+  const neighbors = graph[state.current] || [];
+  if (!neighbors.includes(id)) return;
 
-state.moves++;
-state.current=id;
-state.visited.add(id);
-state.path.push(id);
+  state.moves++;
+  state.current = id;
+  state.visited.add(id);
+  state.path.push(id);
 
-if(nodes[id].tag?.startsWith("trap:")){
-state.trapTypes.add(nodes[id].tag);
-render();
-flash(id);
-}else{
-render();
-}
-}
-
-function generateReflection(){
-let box=document.getElementById("reflectionBox");
-box.style.display="block";
-
-let sequence = state.path.join(" → ");
-let reflection = "<strong>Reflective Analysis</strong><br><br>";
-
-if(state.path.indexOf("exp_metrics") < state.path.indexOf("exp_verbs")){
-reflection += "You foregrounded measurable impact early in your drafting sequence. This suggests an outcomes-first mindset aligned with data-driven hiring contexts.<br><br>";
-}else{
-reflection += "You emphasized descriptive clarity before quantification. Consider how earlier metrics might influence recruiter scanning behavior.<br><br>";
+  const tag = nodes[id].tag || "";
+  if (tag.startsWith("trap:")){
+    state.trapTypes.add(tag);
+    render();
+    flashBad(id);
+  } else if (tag.startsWith("good:")){
+    state.goodTypes.add(tag);
+    render();
+  } else {
+    render();
+  }
 }
 
-if(state.trapTypes.size > 0){
-reflection += "You encountered drafting risks related to " + Array.from(state.trapTypes).map(t=>t.replace("trap:","")).join(", ") + ". Reflect on how these rhetorical missteps affect readability and ATS parsing.<br><br>";
-}else{
-reflection += "You avoided common drafting traps, demonstrating strong rhetorical control over structure and clarity.<br><br>";
+/* =========================
+   TEACHING DEBRIEF (student-facing)
+========================= */
+
+function idx(id){ return state.path.indexOf(id); }
+
+function showDebrief(meta){
+  const box = document.getElementById("debriefBox");
+  box.style.display = "block";
+
+  const order = {
+    verbs: Math.min(...["b1_s1_g","b1_s1_t"].map(idx).filter(x=>x>=0).concat([999])),
+    metrics: Math.min(...["b2_s1_g","b2_s1_t"].map(idx).filter(x=>x>=0).concat([999])),
+    keywords: Math.min(...["b3_s1_g","b3_s1_t"].map(idx).filter(x=>x>=0).concat([999]))
+  };
+
+  let strategy = "mixed";
+  const minVal = Math.min(order.verbs, order.metrics, order.keywords);
+  if (minVal === order.metrics) strategy = "impact-first";
+  else if (minVal === order.keywords) strategy = "ATS-first";
+  else if (minVal === order.verbs) strategy = "narrative-first";
+
+  // choice pattern
+  const choseWeakVerb = state.visited.has("b1_s1_t");
+  const choseVagueScope = state.visited.has("b1_s2_t") || state.visited.has("b1_s3_t");
+  const choseNoMetrics = state.visited.has("b2_s1_t") || state.visited.has("b2_s2_t") || state.visited.has("b2_s3_t");
+  const choseKeywordDump = state.visited.has("b3_s1_t") || state.visited.has("b3_s2_t");
+  const choseRiskyFormat = state.visited.has("b3_s3_t");
+
+  const trapList = Array.from(state.trapTypes).map(t=>t.replace("trap:","").replaceAll("_"," "));
+  const trapText = trapList.length ? trapList.join(", ") : "none";
+
+  let stratLine = "";
+  if (strategy === "impact-first"){
+    stratLine = "You foregrounded measurable outcomes early, treating impact as the anchor for credibility.";
+  } else if (strategy === "ATS-first"){
+    stratLine = "You started by aligning language and formatting—prioritizing scanability and keyword match.";
+  } else if (strategy === "narrative-first"){
+    stratLine = "You began with action framing (verbs/scope), building narrative clarity before optimization.";
+  } else {
+    stratLine = "You moved in a mixed pattern—balancing narrative, impact, and alignment without a single dominant priority.";
+  }
+
+  const takeaways = [];
+  if (choseWeakVerb) takeaways.push("At least once, you chose a low-signal verb (“Worked on”) instead of a decisive action verb.");
+  if (choseVagueScope) takeaways.push("You accepted vague scope language in places where specificity improves credibility.");
+  if (choseNoMetrics) takeaways.push("You used non-quantified results (“a lot / improved results”), which reads as softer evidence.");
+  if (choseKeywordDump) takeaways.push("You drifted toward keyword dumping, which can harm readability and can trigger ATS skepticism when terms are ungrounded.");
+  if (choseRiskyFormat) takeaways.push("You selected a format risk (two-column/icons), which can break ATS parsing.");
+
+  if (takeaways.length === 0) takeaways.push("You consistently chose high-signal, ATS-safe phrasing across the chunk decisions.");
+
+  const earlyExitNote = meta.earlyExitPenalty
+    ? "You exited Experience after completing fewer than two bullet-lines; that usually indicates premature optimization or incomplete evidence."
+    : "You stayed in Experience long enough to build multiple evidence points before exiting.";
+
+  box.innerHTML = `
+    <h3>Reflection</h3>
+    <div class="mini"><strong>Score:</strong> ${meta.score} • <strong>Trap hits:</strong> ${trapText}</div>
+    <div style="margin-top:10px;">${stratLine}</div>
+    <div style="margin-top:10px;"><strong>What your choices suggest:</strong></div>
+    <ul>${takeaways.map(t=>`<li>${t}</li>`).join("")}</ul>
+    <div style="margin-top:10px;"><strong>Completion note:</strong> ${earlyExitNote}</div>
+    <div style="margin-top:10px;"><strong>Reflection prompt:</strong> What would you change if you were optimizing for (1) ATS scanability and (2) human readability at the same time?</div>
+  `;
 }
 
-reflection += "Your full path:<br>" + sequence;
-
-box.innerHTML = reflection;
-}
-
-function buildResume(){
-for(let key of ["headerLine","summaryLine","skillsLine","projectsLine","certsLine","educationLine","expBackbone","expDetours"]){
-document.getElementById(key).innerHTML="";
-}
-
-document.getElementById("headerLine").append(makeNode("header"));
-document.getElementById("summaryLine").append(makeNode("summary"));
-document.getElementById("skillsLine").append(makeNode("skills"));
-
-let exp=document.getElementById("expBackbone");
-["exp_entry","exp_role","exp_verbs","exp_metrics","exp_keywords","exp_format","exp_exit"]
-.forEach(id=>exp.append(makeNode(id)));
-
-let d=document.getElementById("expDetours");
-detours.forEach(id=>{
-let el=makeNode(id);
-el.classList.add("detour");
-d.append(el);
-});
-
-document.getElementById("projectsLine").append(makeNode("projects"));
-document.getElementById("certsLine").append(makeNode("certifications"));
-document.getElementById("educationLine").append(makeNode("education"));
-}
+/* =========================
+   RESET
+========================= */
 
 function reset(){
-document.getElementById("reflectionBox").style.display="none";
-buildGraph();
-buildResume();
-state=newState();
-render();
+  document.getElementById("debriefBox").style.display = "none";
+  document.getElementById("debriefBox").innerHTML = "";
+
+  buildGraphAndContent();
+  buildDOM();
+  state = newState();
+  render();
 }
 
-document.getElementById("resetBtn").onclick=reset;
-
+document.getElementById("resetBtn").onclick = reset;
 reset();
 </script>
 </body>
