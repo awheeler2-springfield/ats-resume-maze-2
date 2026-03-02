@@ -1,238 +1,225 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Word-Level Scan</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATS Optimization Simulator</title>
 
 <style>
 :root{
-  --nav:#1D3461;
-  --bg:#f3f3f3;
-  --paper:#fff;
-  --green:#1A6B45;
-  --red:#c0392b;
+  --bg:#f4f4f4;
+  --paper:#ffffff;
+  --ink:#111;
+  --good:#c8f7c5;
+  --bad:#ffd6d6;
+  --ui:#e0e0e0;
 }
 
-body{margin:0;background:var(--bg);font-family:Georgia, serif;color:#111;}
-
-.rail{
-  position:fixed;left:0;top:0;
-  width:340px;height:100vh;
-  background:var(--nav);color:#fff;
-  padding:20px;box-sizing:border-box;
-  font-family:Arial;
+body{
+  margin:0;
+  background:var(--bg);
+  font-family:Georgia, "Times New Roman", serif;
+  color:var(--ink);
 }
 
-.main{margin-left:340px;padding:40px;}
+.wrapper{
+  display:flex;
+  height:100vh;
+}
+
+.sidebar{
+  width:280px;
+  background:#fff;
+  border-right:1px solid var(--ui);
+  padding:20px;
+  box-sizing:border-box;
+}
+
+.sidebar h2{
+  margin-top:0;
+}
 
 .resume{
-  max-width:850px;margin:auto;
+  flex:1;
+  overflow:auto;
+  padding:40px;
+}
+
+.paper{
+  max-width:900px;
+  margin:auto;
   background:var(--paper);
-  padding:50px;
-  box-shadow:0 2px 18px rgba(0,0,0,.08);
+  padding:40px;
+  box-shadow:0 0 10px rgba(0,0,0,.05);
 }
 
-h1{margin:0;font-size:1.9rem;}
-.header-line{margin-top:4px;color:#444;}
-
-.section-title{
-  margin-top:26px;
-  font-weight:bold;
-  border-bottom:1px solid #000;
-  padding-bottom:4px;
-}
-
-.job-title{font-weight:bold;margin-top:16px;}
-.company{color:#444;}
-
-ul{margin:8px 0 0 18px;}
-
-.word{
+.token{
   cursor:pointer;
-  padding:1px 2px;
+  padding:2px 3px;
+  border-radius:3px;
 }
 
-.correct{background:var(--green);color:#fff;}
-.wrong{background:var(--red);color:#fff;}
+.token.good.selected{
+  background:var(--good);
+}
 
-.small{font-size:.9rem;}
+.token.bad.flash{
+  background:var(--bad);
+}
+
 button{
-  padding:8px 12px;
-  border:none;
-  border-radius:6px;
+  padding:10px 15px;
   margin-top:10px;
   cursor:pointer;
 }
+
+.results{
+  margin-top:20px;
+  font-size:.9rem;
+  line-height:1.4;
+}
 </style>
 </head>
-<body>
 
-<div class="rail">
-  <h2>ATS Word Scan</h2>
-  <div>Score: <span id="score">0</span></div>
-  <div>Time: <span id="timer">75</span></div>
-  <button onclick="start()">Start Scan</button>
-  <div id="results" class="small"></div>
+<body>
+<div class="wrapper">
+
+<div class="sidebar">
+  <h2>ATS Simulator</h2>
+  <p>Click only words or phrases that would help this resume pass an ATS scan.</p>
+  <p><strong>Score:</strong> <span id="score">0</span></p>
+  <p><strong>Correct:</strong> <span id="correct">0</span></p>
+  <p><strong>Incorrect:</strong> <span id="incorrect">0</span></p>
+  <button onclick="finishGame()">Finish & Evaluate</button>
+  <div class="results" id="results"></div>
 </div>
 
-<div class="main">
-<div class="resume" id="resume"></div>
+<div class="resume">
+<div class="paper">
+
+<h1>Jordan Martinez</h1>
+<p>
+<span class="token good">Digital Marketing Specialist</span> with 
+<span class="token good">5+ years experience</span> in 
+<span class="token good">SEO strategy</span>, 
+<span class="token good">content optimization</span>, and 
+<span class="token bad">making brands sparkle online</span>.
+</p>
+
+<h2>Skills</h2>
+<p>
+<span class="token good">Google Analytics</span>, 
+<span class="token good">GA4 implementation</span>, 
+<span class="token good">A/B testing</span>, 
+<span class="token good">conversion rate optimization</span>, 
+<span class="token bad">great communicator</span>, 
+<span class="token bad">team player</span>, 
+<span class="token good">CRM management</span>, 
+<span class="token good">HubSpot</span>, 
+<span class="token good">data visualization</span>, 
+<span class="token bad">detail-oriented</span>
+</p>
+
+<h2>Experience</h2>
+<p>
+Led <span class="token good">cross-functional collaboration</span> to improve 
+<span class="token good">customer acquisition</span> by 
+<span class="token good">27%</span> using 
+<span class="token good">targeted email marketing campaigns</span> and 
+<span class="token good">keyword research</span>.  
+Created <span class="token bad">fun and exciting posts</span> that increased 
+<span class="token good">engagement metrics</span>.  
+Implemented <span class="token good">SEO audits</span> and reduced 
+<span class="token good">bounce rate</span> by 
+<span class="token good">18%</span>.  
+Worked in a <span class="token bad">fast-paced environment</span> to deliver 
+<span class="token good">performance analytics reports</span>.
+</p>
+
+<h2>Projects</h2>
+<p>
+Designed a <span class="token good">multi-channel digital strategy</span> integrating 
+<span class="token good">paid search</span>, 
+<span class="token good">organic traffic optimization</span>, and 
+<span class="token good">social media analytics</span>.  
+Helped company <span class="token bad">reach new heights</span> through 
+<span class="token good">market segmentation analysis</span>.
+</p>
+
+<h2>Education</h2>
+<p>
+B.A. in <span class="token good">Marketing Analytics</span>  
+Certified in <span class="token good">Google Ads</span> and 
+<span class="token good">Data-Driven Decision Making</span>
+</p>
+
+</div>
+</div>
 </div>
 
 <script>
+let score = 0;
+let correct = 0;
+let incorrect = 0;
 
-let score=0;
-let timer=75;
-let interval;
-let active=false;
+const tokens = document.querySelectorAll('.token');
 
-let stats={
-  strongFound:0,
-  trapsClicked:0,
-  missedStrong:0,
-  totalStrong:0
-};
+tokens.forEach(token => {
+  token.addEventListener('click', () => {
 
-const strongWords=[
-"Improved","Reduced","Increased","Analyzed","Built",
-"18%","35%","20%","$650,000","$40,000,000",
-"Predictive","Optimized","Led","Executed","Securing"
-];
+    if(token.classList.contains('selected')) return;
 
-const trapWords=[
-"Passion","Hard-working","Responsible",
-"Helped","Synergy","Various","Worked","Significantly"
-];
+    if(token.classList.contains('good')){
+      token.classList.add('selected');
+      score += 5;
+      correct++;
+    } else {
+      incorrect++;
+      score -= 2;
+      token.classList.add('flash');
+      buzz();
+      setTimeout(()=>token.classList.remove('flash'),400);
+    }
 
-function start(){
-score=0;
-timer=75;
-stats={strongFound:0,trapsClicked:0,missedStrong:0,totalStrong:0};
-active=true;
-document.getElementById("score").textContent=score;
-document.getElementById("timer").textContent=timer;
-document.getElementById("results").innerHTML="";
-buildResume();
-interval=setInterval(tick,1000);
-}
-
-function tick(){
-timer--;
-document.getElementById("timer").textContent=timer;
-if(timer<=0){
-clearInterval(interval);
-active=false;
-calculateMissed();
-showFeedback();
-}
-}
-
-function buildResume(){
-
-let resumeText = `
-Charles Bloomberg
-Seoul, South Korea • charlesbloomberg@gmail.com • (621) 799-5548
-
-PROFESSIONAL SUMMARY
-Passion for building inspiring companies through industry-leading tech, design, and execution.
-
-PROFESSIONAL EXPERIENCE
-
-CEO & Founder — Rezi
-• Improved user growth by 18% securing over $650,000 in funding.
-• Built scalable partnerships and Increased global expansion 35%.
-• Responsible for helping marketing teams optimize outreach.
-
-Web Developer — Kaplan
-• Executed redesign and Optimized landing pages.
-• Worked on various analytics reports and Helped improve performance.
-
-Marketing Analyst — Kaplan
-• Analyzed data and Reduced CPA by 20%.
-• Significantly increased awareness through synergy initiatives.
-`;
-
-let words = resumeText.split(" ");
-
-let html="";
-words.forEach(word=>{
-let clean=word.replace(/[^a-zA-Z0-9%$]/g,"");
-let type="";
-if(strongWords.includes(clean)){
-type="strength";
-stats.totalStrong++;
-}
-if(trapWords.includes(clean)){
-type="risk";
-}
-if(type){
-html+=`<span class="word" data-type="${type}">${word}</span> `;
-}else{
-html+=word+" ";
-}
+    updateStats();
+  });
 });
 
-document.getElementById("resume").innerHTML=html;
-
-document.querySelectorAll(".word").forEach(el=>{
-el.onclick=function(){
-if(!active)return;
-let type=el.getAttribute("data-type");
-if(type==="strength"){
-score+=4;
-stats.strongFound++;
-el.classList.add("correct");
-}
-if(type==="risk"){
-score-=3;
-stats.trapsClicked++;
-el.classList.add("wrong");
-}
-document.getElementById("score").textContent=score;
-};
-});
+function updateStats(){
+  document.getElementById('score').textContent = score;
+  document.getElementById('correct').textContent = correct;
+  document.getElementById('incorrect').textContent = incorrect;
 }
 
-function calculateMissed(){
-stats.missedStrong = stats.totalStrong - stats.strongFound;
+function finishGame(){
+  const totalGood = document.querySelectorAll('.token.good').length;
+  const accuracy = Math.round((correct / totalGood) * 100);
+
+  let evaluation = "";
+
+  if(accuracy >= 85){
+    evaluation = "Excellent keyword recognition. You are identifying industry-specific terminology, quantifiable metrics, and software platforms effectively.";
+  } else if(accuracy >= 60){
+    evaluation = "Moderate ATS literacy. You recognize many functional keywords but may be missing quantifiable impact or technical specificity.";
+  } else {
+    evaluation = "Surface-level scanning. You may be mistaking soft skills for ATS-relevant keywords. Revisit the difference between measurable impact and vague descriptors.";
+  }
+
+  document.getElementById('results').innerHTML =
+    "<strong>Accuracy:</strong> " + accuracy + "%<br><br>" +
+    evaluation;
 }
 
-function showFeedback(){
-
-let diagnostic="";
-
-if(stats.trapsClicked===0){
-diagnostic+="You demonstrated disciplined lexical discrimination. ";
-}else{
-diagnostic+="You clicked language that signals low rhetorical density or inflated abstraction. ";
+function buzz(){
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const oscillator = audioCtx.createOscillator();
+  oscillator.type = 'sawtooth';
+  oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+  oscillator.connect(audioCtx.destination);
+  oscillator.start();
+  setTimeout(()=>oscillator.stop(),150);
 }
-
-if(stats.missedStrong>2){
-diagnostic+="You overlooked measurable impact markers; your scanning pattern may prioritize narrative over quantifiable proof. ";
-}
-
-if(score>25){
-diagnostic+="Overall, your scan pattern suggests an ability to detect metrics, agency, and scalable outcomes under time pressure.";
-}else{
-diagnostic+="Your scan pattern suggests susceptibility to abstraction and weak-verb constructions.";
-}
-
-diagnostic+=`
-<br><br><strong>Metrics:</strong>
-<br>Strong words found: ${stats.strongFound}/${stats.totalStrong}
-<br>Trap words clicked: ${stats.trapsClicked}
-<br>Missed high-signal words: ${stats.missedStrong}
-<br><br>
-Reflect: Did you privilege verbs, numbers, or perceived leadership language? 
-What would change if you were optimizing for ATS parsing rather than human narrative?
-`;
-
-document.getElementById("results").innerHTML=
-"<br><strong>Final Score:</strong> "+score+
-"<br><br>"+diagnostic;
-}
-
 </script>
+
 </body>
 </html>
