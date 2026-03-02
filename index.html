@@ -3,30 +3,31 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Job-Match Simulator (Non-Tech)</title>
+<title>ATS Optimization Simulator</title>
 
 <style>
 :root{
   --bg:#f4f4f4;
-  --paper:#fff;
+  --paper:#ffffff;
   --ink:#111;
-  --ui:#e0e0e0;
+  --ui:#e2e2e2;
   --good:#c8f7c5;
   --bad:#ffd6d6;
   --accent:#1d3461;
+  --muted:#666;
 }
 
 body{
   margin:0;
   background:var(--bg);
-  font-family:Georgia, "Times New Roman", serif;
+  font-family: Georgia, "Times New Roman", serif;
   color:var(--ink);
 }
 
 .wrapper{ display:flex; height:100vh; }
 
 .sidebar{
-  width:360px;
+  width:320px;
   background:#fff;
   border-right:1px solid var(--ui);
   padding:18px;
@@ -37,19 +38,20 @@ body{
 .resume{
   flex:1;
   overflow:auto;
-  padding:30px;
+  padding:34px 28px;
 }
 
 .paper{
-  max-width:900px;
+  max-width:980px;
   margin:auto;
   background:var(--paper);
   padding:40px;
-  box-shadow:0 0 12px rgba(0,0,0,.06);
+  box-shadow:0 0 14px rgba(0,0,0,.07);
+  border-radius:10px;
 }
 
 h1{ margin:0 0 6px 0; }
-h2{ margin:18px 0 6px 0; border-bottom:1px solid var(--ui); padding-bottom:4px; }
+h2{ margin:18px 0 8px 0; border-bottom:1px solid var(--ui); padding-bottom:6px; }
 
 .token{
   cursor:pointer;
@@ -60,23 +62,42 @@ h2{ margin:18px 0 6px 0; border-bottom:1px solid var(--ui); padding-bottom:4px; 
 .token.good.selected{ background:var(--good); }
 .token.bad.flash{ background:var(--bad); }
 
-.token.heat[data-heat="1"]{ background:rgba(255,200,0,.15); }
-.token.heat[data-heat="2"]{ background:rgba(255,150,0,.18); }
-.token.heat[data-heat="3"]{ background:rgba(255,100,0,.22); }
-.token.heat[data-heat="4"]{ background:rgba(255,60,0,.25); }
-.token.heat[data-heat="5"]{ background:rgba(255,0,0,.28); }
-
 button{
-  margin-top:8px;
-  padding:8px 12px;
+  padding:10px 12px;
+  border:1px solid var(--ui);
+  background:#fff;
+  border-radius:10px;
   cursor:pointer;
+  margin-top:8px;
+}
+
+button.primary{
+  background:var(--accent);
+  color:#fff;
+  border:none;
+}
+
+.hud{
+  margin-top:12px;
+  padding:12px;
+  border:1px solid var(--ui);
+  border-radius:10px;
+  background:#fafafa;
+  font-size:14px;
+}
+
+.hud .row{
+  display:flex;
+  justify-content:space-between;
+  margin:6px 0;
 }
 
 .panel{
   margin-top:12px;
-  padding:10px;
+  padding:12px;
   border:1px solid var(--ui);
-  border-radius:8px;
+  border-radius:10px;
+  background:#fafafa;
   font-size:14px;
 }
 </style>
@@ -85,258 +106,175 @@ button{
 <body>
 <div class="wrapper">
 
-<div class="sidebar">
-  <h2>ATS Job Match Simulator</h2>
+<aside class="sidebar">
+  <h2>ATS Optimization Simulator</h2>
 
-  <div class="panel">
-    <strong>Select Job Ad</strong><br/>
-    <select id="jobSelect"></select>
+  <div class="hud">
+    <div class="row"><span>Level</span><span id="hudLevel">—</span></div>
+    <div class="row"><span>Time</span><span id="hudTime">—</span></div>
+    <div class="row"><span>Score</span><span id="hudScore">0</span></div>
+    <div class="row"><span>Correct</span><span id="hudCorrect">0</span></div>
+    <div class="row"><span>Incorrect</span><span id="hudIncorrect">0</span></div>
   </div>
 
-  <div class="panel">
-    <strong>Target Competencies</strong>
-    <div id="jobKeywords"></div>
-  </div>
-
-  <div class="panel">
-    <strong>HUD</strong><br/>
-    Time: <span id="time">--</span><br/>
-    Score: <span id="score">0</span><br/>
-    Accuracy: <span id="accuracy">--</span><br/>
-    Coverage: <span id="coverage">0%</span>
-  </div>
-
-  <button onclick="startGame()">Start</button>
-  <button onclick="finishGame()">Finish</button>
-  <button onclick="toggleHeat()">Toggle Heatmap</button>
+  <button class="primary" id="btnStart">Start</button>
+  <button id="btnFinish" disabled>Finish</button>
+  <button id="btnNext" disabled>Next Level</button>
+  <button id="btnRestart">Restart</button>
 
   <div class="panel" id="results" style="display:none;"></div>
-</div>
+</aside>
 
-<div class="resume">
-<div class="paper" id="resumeArea">
-  <h1>Choose a job and click Start</h1>
-</div>
-</div>
+<main class="resume">
+  <div class="paper" id="paper">
+    <h1>ATS Optimization Simulator</h1>
+    <p>Click Start to begin.</p>
+  </div>
+</main>
+
 </div>
 
 <script>
 
-/* ===============================
-   JOB ADS (NON-TECH)
-================================= */
+/* =======================
+   BUZZ SOUND (consistent)
+======================= */
 
-const jobs = [
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function buzz(){
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "square";
+  osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.18);
+}
+
+/* =======================
+   DATA (Increased Density + Campus)
+======================= */
+
+const COURSE = [
 {
-  title:"Communications Manager",
-  weights:{
-    "content strategy":5,
-    "editorial calendar":4,
-    "media relations":4,
-    "brand guidelines":3,
-    "newsletter analytics":4,
-    "press releases":3,
-    "social media reporting":3
-  }
-},
-{
-  title:"HR Generalist",
-  weights:{
-    "employee onboarding":5,
-    "benefits administration":4,
-    "compliance documentation":4,
-    "performance management":3,
-    "HRIS":5,
-    "policy development":3,
-    "recruitment coordination":4
-  }
-},
-{
-  title:"Operations Coordinator",
-  weights:{
-    "vendor management":4,
-    "budget tracking":4,
-    "process improvement":5,
-    "SOP documentation":4,
-    "inventory management":3,
-    "stakeholder scheduling":3,
-    "invoice reconciliation":4
-  }
+  level:1,
+  timeSeconds:75,
+  resume:`
+<h1>Jordan Martinez</h1>
+
+<h2>Summary</h2>
+<p>
+<span class="token good">Digital Marketing Specialist</span>;
+<span class="token good">SEO strategy</span>;
+<span class="token good">A/B testing</span>;
+<span class="token good">GA4 implementation</span>;
+<span class="token bad">creative visionary</span>;
+<span class="token bad">team player</span>;
+<span class="token good">conversion rate optimization</span>;
+<span class="token good">data-driven reporting</span>;
+<span class="token bad">fast learner</span>.
+</p>
+
+<h2>Experience</h2>
+<p>
+Improved <span class="token good">conversion rate by 22%</span>;
+Built <span class="token good">KPI dashboards</span>;
+Conducted <span class="token good">keyword research</span>;
+Optimized <span class="token good">landing pages</span>;
+Delivered <span class="token bad">impactful storytelling</span>;
+Led <span class="token bad">high-energy campaigns</span>.
+</p>
+
+<h2>Campus Leadership</h2>
+<p>
+<span class="token good">Treasurer, Student Senate</span>;
+Managed <span class="token good">$45,000 annual budget</span>;
+Organized <span class="token good">cross-department coordination</span>;
+<span class="token bad">campus changemaker</span>;
+<span class="token bad">motivational presence</span>.
+</p>
+
+<h2>Athletics</h2>
+<p>
+<span class="token good">Varsity Soccer Team Captain</span>;
+Tracked <span class="token good">performance metrics</span>;
+Coordinated <span class="token good">training schedules</span>;
+<span class="token bad">natural leader</span>;
+<span class="token bad">locker-room inspiration</span>.
+</p>
+`
 }
 ];
 
-/* ===============================
-   RESUMES (NON-TECH)
-================================= */
+/* =======================
+   GAME STATE
+======================= */
 
-const resumes = {
-"Communications Manager":[
-`
-<h1>Alex Morgan</h1>
-<h2>Summary</h2>
-<p>
-<span class="token good">content strategy</span>;
-<span class="token good">editorial calendar</span>;
-<span class="token good">newsletter analytics</span>;
-<span class="token bad">creative visionary</span>;
-<span class="token good">media relations</span>;
-<span class="token bad">great communicator</span>.
-</p>
+let score=0, correct=0, incorrect=0, timeLeft=0, timer=null;
 
-<h2>Experience</h2>
-<p>
-Managed <span class="token good">press releases</span>;
-Led <span class="token good">social media reporting</span>;
-Developed <span class="token good">brand guidelines</span>;
-Delivered <span class="token bad">impactful storytelling</span>.
-</p>
-`
-],
+const paper=document.getElementById("paper");
+const results=document.getElementById("results");
 
-"HR Generalist":[
-`
-<h1>Jordan Ellis</h1>
-<h2>Summary</h2>
-<p>
-<span class="token good">employee onboarding</span>;
-<span class="token good">HRIS</span>;
-<span class="token good">benefits administration</span>;
-<span class="token bad">people person</span>.
-</p>
+document.getElementById("btnStart").onclick=start;
+document.getElementById("btnFinish").onclick=finish;
+document.getElementById("btnRestart").onclick=restart;
 
-<h2>Experience</h2>
-<p>
-Oversaw <span class="token good">compliance documentation</span>;
-Supported <span class="token good">recruitment coordination</span>;
-Improved <span class="token good">performance management</span>;
-Promoted <span class="token bad">positive culture</span>.
-</p>
-`
-],
-
-"Operations Coordinator":[
-`
-<h1>Taylor Reed</h1>
-<h2>Summary</h2>
-<p>
-<span class="token good">process improvement</span>;
-<span class="token good">SOP documentation</span>;
-<span class="token good">vendor management</span>;
-<span class="token bad">hard worker</span>.
-</p>
-
-<h2>Experience</h2>
-<p>
-Managed <span class="token good">budget tracking</span>;
-Performed <span class="token good">invoice reconciliation</span>;
-Coordinated <span class="token good">stakeholder scheduling</span>;
-Handled <span class="token good">inventory management</span>;
-Delivered <span class="token bad">excellent service</span>.
-</p>
-`
-]
-};
-
-/* ===============================
-   GAME LOGIC
-================================= */
-
-let score=0, correct=0, incorrect=0, totalGood=0;
-let timeLeft=60, timer=null;
-let heatOn=false;
-let currentJob=null;
-
-const jobSelect=document.getElementById("jobSelect");
-jobs.forEach(j=>{
-  const opt=document.createElement("option");
-  opt.value=j.title;
-  opt.textContent=j.title;
-  jobSelect.appendChild(opt);
-});
-
-function renderJob(){
-  currentJob=jobs.find(j=>j.title===jobSelect.value);
-  const kwDiv=document.getElementById("jobKeywords");
-  kwDiv.innerHTML="";
-  Object.keys(currentJob.weights).forEach(k=>{
-    kwDiv.innerHTML+=`${k} (weight ${currentJob.weights[k]})<br/>`;
-  });
-}
-
-jobSelect.addEventListener("change",renderJob);
-renderJob();
-
-function startGame(){
+function start(){
+  const level=COURSE[0];
+  paper.innerHTML=level.resume;
   score=0; correct=0; incorrect=0;
-  document.getElementById("results").style.display="none";
+  results.style.display="none";
 
-  const pool=resumes[currentJob.title];
-  const resumeHTML=pool[Math.floor(Math.random()*pool.length)];
-  document.getElementById("resumeArea").innerHTML=resumeHTML;
-
-  const tokens=document.querySelectorAll(".token");
-  totalGood=[...tokens].filter(t=>t.classList.contains("good")).length;
-
-  tokens.forEach(t=>{
-    const text=t.textContent.trim();
-    if(currentJob.weights[text]){
-      t.dataset.heat=currentJob.weights[text];
-    } else {
-      t.dataset.heat=1;
-    }
-    t.addEventListener("click",()=>handleClick(t));
+  document.querySelectorAll(".token").forEach(t=>{
+    t.onclick=()=>handleClick(t);
   });
 
-  timeLeft=60;
+  timeLeft=level.timeSeconds;
   timer=setInterval(()=>{
     timeLeft--;
-    if(timeLeft<=0){ clearInterval(timer); finishGame(); }
-    document.getElementById("time").textContent=timeLeft+"s";
+    document.getElementById("hudTime").textContent=timeLeft+"s";
+    if(timeLeft<=0){ clearInterval(timer); finish(); }
   },1000);
+
+  document.getElementById("hudLevel").textContent="1";
 }
 
 function handleClick(t){
   if(t.classList.contains("selected")) return;
   if(t.classList.contains("good")){
-    correct++;
-    score+= currentJob.weights[t.textContent.trim()] || 1;
+    score+=5; correct++;
     t.classList.add("selected");
   } else {
-    incorrect++;
-    score-=2;
+    score-=3; incorrect++;
     t.classList.add("flash");
-    setTimeout(()=>t.classList.remove("flash"),300);
+    buzz();
+    setTimeout(()=>t.classList.remove("flash"),250);
   }
   updateHUD();
 }
 
 function updateHUD(){
-  document.getElementById("score").textContent=score;
-  const totalClicks=correct+incorrect;
-  const accuracy= totalClicks? Math.round((correct/totalClicks)*100):"--";
-  const coverage= totalGood? Math.round((correct/totalGood)*100):0;
-  document.getElementById("accuracy").textContent=accuracy+"%";
-  document.getElementById("coverage").textContent=coverage+"%";
+  document.getElementById("hudScore").textContent=score;
+  document.getElementById("hudCorrect").textContent=correct;
+  document.getElementById("hudIncorrect").textContent=incorrect;
 }
 
-function finishGame(){
+function finish(){
   clearInterval(timer);
-  const resDiv=document.getElementById("results");
-  resDiv.style.display="block";
-  resDiv.innerHTML=`
+  results.style.display="block";
+  results.innerHTML=`
   <strong>Final Score:</strong> ${score}<br/>
-  <strong>Correct:</strong> ${correct}<br/>
-  <strong>Incorrect:</strong> ${incorrect}<br/>
-  Focus on matching resume language to weighted job competencies.
+  Correct: ${correct}<br/>
+  Incorrect: ${incorrect}<br/>
+  Remember: measurable outcomes and structured responsibilities matter more than personality claims.
   `;
 }
 
-function toggleHeat(){
-  heatOn=!heatOn;
-  document.querySelectorAll(".token").forEach(t=>{
-    if(heatOn) t.classList.add("heat");
-    else t.classList.remove("heat");
-  });
+function restart(){
+  location.reload();
 }
 
 </script>
