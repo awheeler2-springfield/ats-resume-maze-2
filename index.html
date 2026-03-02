@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Scan Simulation</title>
+<title>ATS Scan Immersion</title>
 
 <style>
 :root{
@@ -14,24 +14,40 @@
   --red:#c0392b;
 }
 
-body{margin:0;font-family:Arial;background:var(--bg);}
+body{margin:0;font-family:Georgia, serif;background:var(--bg);color:#111;}
+
 .rail{
   position:fixed;left:0;top:0;
-  width:320px;height:100vh;
+  width:340px;height:100vh;
   background:var(--nav);color:#fff;
   padding:20px;box-sizing:border-box;
+  font-family:Arial;
 }
-.main{margin-left:320px;padding:40px;}
+
+.main{
+  margin-left:340px;
+  padding:40px;
+}
+
 .resume{
-  max-width:900px;margin:auto;
-  background:#fff;padding:40px;
-  border-radius:10px;
-  box-shadow:0 2px 14px rgba(0,0,0,.08);
+  max-width:850px;
+  margin:auto;
+  background:var(--paper);
+  padding:50px;
+  box-shadow:0 2px 18px rgba(0,0,0,.08);
 }
 
-.section-title{font-weight:bold;margin-top:20px;border-bottom:1px solid #000;}
+h1{margin:0;font-size:1.8rem;}
+.section-title{
+  margin-top:24px;
+  font-weight:bold;
+  border-bottom:1px solid #000;
+  padding-bottom:4px;
+}
 
-.phrase{
+ul{margin:8px 0 0 18px;}
+
+.clickable{
   cursor:pointer;
   padding:2px 4px;
 }
@@ -46,17 +62,19 @@ button{
   margin:6px 0;
   cursor:pointer;
 }
+
+.small{font-size:.9rem;}
 </style>
 </head>
 <body>
 
 <div class="rail">
-  <h2>ATS Scan Simulation</h2>
+  <h2>ATS Immersion</h2>
   <div>Score: <span id="score">0</span></div>
   <div>Time: <span id="timer">60</span></div>
   <div>Mode: <span id="modeLabel">Highlight Strengths</span></div>
   <div>Domain:
-    <select id="domainSelect">
+    <select id="domain">
       <option value="data">Data</option>
       <option value="marketing">Marketing</option>
       <option value="operations">Operations</option>
@@ -70,8 +88,8 @@ button{
     </select>
   </div>
   <button onclick="toggleMode()">Toggle Mode</button>
-  <button onclick="startGame()">Start</button>
-  <div id="results"></div>
+  <button onclick="start()">Start</button>
+  <div id="results" class="small"></div>
 </div>
 
 <div class="main">
@@ -82,69 +100,25 @@ button{
 
 let score=0;
 let timer=60;
-let interval;
-let mode="strength"; // or "risk"
 let active=false;
+let interval;
+let mode="strength";
 let stats={correct:0,wrong:0,missed:0};
 
-const phraseBank={
-data:{
-strength:[
-"Improved ROI by 18%",
-"Analyzed cross-channel performance data",
-"Built predictive models",
-"Increased engagement 35%",
-"Automated reporting workflow"
-],
-risk:[
-"Hard-working team player",
-"Worked on various reports",
-"SEO GA4 AI KPI scrum agile",
-"Responsible for helping",
-"Two-column layout with icons"
-]
-},
-marketing:{
-strength:[
-"Increased conversion rate 22%",
-"Optimized email segmentation",
-"Led A/B testing initiative",
-"Reduced CPA by 14%",
-"Improved CTR 30%"
-],
-risk:[
-"Passionate about branding",
-"Grew awareness significantly",
-"Synergy-driven strategy",
-"Multi-tasked efficiently",
-"Designer resume template"
-]
-},
-operations:{
-strength:[
-"Reduced fulfillment time 20%",
-"Streamlined workflow processes",
-"Implemented KPI tracking",
-"Cut costs by 12%",
-"Improved supply chain efficiency"
-],
-risk:[
-"Helped where needed",
-"Managed everything company-wide",
-"Team-oriented mindset",
-"Visually enhanced resume layout",
-"General operational support"
-]
+function toggleMode(){
+mode = (mode==="strength")?"risk":"strength";
+document.getElementById("modeLabel").textContent =
+mode==="strength"?"Highlight Strengths":"Highlight Risks";
 }
-};
 
-function startGame(){
+function start(){
 score=0;
-stats={correct:0,wrong:0,missed:0};
 timer=60;
+stats={correct:0,wrong:0,missed:0};
 active=true;
 document.getElementById("score").textContent=score;
 document.getElementById("timer").textContent=timer;
+document.getElementById("results").innerHTML="";
 buildResume();
 interval=setInterval(tick,1000);
 }
@@ -160,37 +134,84 @@ showResults();
 }
 }
 
-function toggleMode(){
-mode = (mode==="strength")?"risk":"strength";
-document.getElementById("modeLabel").textContent =
-mode==="strength"?"Highlight Strengths":"Highlight Risks";
-}
-
 function buildResume(){
-const domain=document.getElementById("domainSelect").value;
+
+const domain=document.getElementById("domain").value;
 const difficulty=document.getElementById("difficulty").value;
-let strengths=[...phraseBank[domain].strength];
-let risks=[...phraseBank[domain].risk];
+
+let strengthPhrases=[
+"Improved ROI by 18%",
+"Increased engagement 35% in 6 months",
+"Analyzed cross-channel performance data",
+"Reduced fulfillment time 20%",
+"Built predictive models"
+];
+
+let riskPhrases=[
+"Hard-working team player",
+"Responsible for helping",
+"SEO GA4 AI KPI scrum agile",
+"Grew awareness significantly",
+"Two-column layout with icons"
+];
 
 if(difficulty==="hard"){
-strengths.push("Demonstrated impact across verticals");
-risks.push("Results-driven professional");
+riskPhrases.push("Results-driven professional");
+strengthPhrases.push("Reduced CPA by 14%");
 }
 
-let combined=[...strengths,...risks];
-shuffle(combined);
+function span(text,type){
+return `<span class="clickable" data-type="${type}">${text}</span>`;
+}
 
-let html="<div class='section-title'>PROFESSIONAL EXPERIENCE</div><ul>";
-combined.forEach(p=>{
-html+=`<li><span class="phrase" data-type="${
-strengths.includes(p)?"strength":"risk"
-}">${p}</span></li>`;
-});
-html+="</ul>";
+let resumeHTML=`
+<h1>Jordan Avery</h1>
+Springfield, MA • jordan@email.com • (555) 555-5555
 
-document.getElementById("resume").innerHTML=html;
+<div class="section-title">SUMMARY</div>
+<p>
+${span(strengthPhrases[0],"strength")} with experience in analytics and reporting,
+${span(riskPhrases[0],"risk")} passionate about innovation.
+</p>
 
-document.querySelectorAll(".phrase").forEach(el=>{
+<div class="section-title">SKILLS</div>
+<p>
+SQL • Tableau • GA4 • Reporting •
+${span(riskPhrases[2],"risk")}
+</p>
+
+<div class="section-title">PROFESSIONAL EXPERIENCE</div>
+
+<strong>Senior Analyst — Meridian Insights</strong>
+<ul>
+<li>
+${span(strengthPhrases[2],"strength")} to support executive decisions
+and ${span(riskPhrases[1],"risk")} across departments.
+</li>
+<li>
+${span(strengthPhrases[1],"strength")} while
+${span(riskPhrases[3],"risk")}.
+</li>
+</ul>
+
+<strong>Operations Intern — Northstar Logistics</strong>
+<ul>
+<li>
+${span(strengthPhrases[3],"strength")} through KPI tracking,
+avoiding ${span(riskPhrases[4],"risk")}.
+</li>
+</ul>
+
+<div class="section-title">PROJECTS</div>
+<p>
+Developed interactive ATS Resume Maze; ${span(strengthPhrases[4],"strength")}
+for hiring simulations.
+</p>
+`;
+
+document.getElementById("resume").innerHTML=resumeHTML;
+
+document.querySelectorAll(".clickable").forEach(el=>{
 el.onclick=function(){
 if(!active)return;
 let type=el.getAttribute("data-type");
@@ -209,36 +230,30 @@ document.getElementById("score").textContent=score;
 }
 
 function calculateMissed(){
-document.querySelectorAll(".phrase").forEach(el=>{
-let type=el.getAttribute("data-type");
-if(type==="strength" && mode==="strength" && !el.classList.contains("correct")){
+document.querySelectorAll(".clickable").forEach(el=>{
+if(el.getAttribute("data-type")==="strength" &&
+!el.classList.contains("correct")){
 stats.missed++;
 }
 });
 }
 
 function showResults(){
-let reflection="";
+let analysis="";
 if(score>30){
-reflection="Strong ATS signal recognition with good risk discrimination.";
+analysis="You demonstrated strong ATS-level discrimination between signal and noise.";
 }else if(score>10){
-reflection="Moderate recognition; consider precision in identifying measurable impact.";
+analysis="You recognize some high-signal language but may be overlooking measurable impact.";
 }else{
-reflection="You may be prioritizing buzzwords over measurable and ATS-safe phrasing.";
+analysis="You may be prioritizing buzzwords or aesthetics over quantifiable and ATS-safe phrasing.";
 }
+
 document.getElementById("results").innerHTML=
 "<br><strong>Final Score:</strong> "+score+
 "<br>Correct: "+stats.correct+
 "<br>Wrong: "+stats.wrong+
 "<br>Missed Strengths: "+stats.missed+
-"<br><br>"+reflection;
-}
-
-function shuffle(a){
-for(let i=a.length-1;i>0;i--){
-let j=Math.floor(Math.random()*(i+1));
-[a[i],a[j]]=[a[j],a[i]];
-}
+"<br><br>"+analysis;
 }
 
 </script>
