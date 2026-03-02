@@ -1,225 +1,1119 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ATS Optimization Simulator</title>
-
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ATS Optimization Simulator — Levels + Timer + Heatmap</title>
 <style>
-:root{
-  --bg:#f4f4f4;
-  --paper:#ffffff;
-  --ink:#111;
-  --good:#c8f7c5;
-  --bad:#ffd6d6;
-  --ui:#e0e0e0;
-}
+  :root{
+    --bg:#f4f4f4;
+    --paper:#ffffff;
+    --ink:#111;
+    --ui:#e2e2e2;
 
-body{
-  margin:0;
-  background:var(--bg);
-  font-family:Georgia, "Times New Roman", serif;
-  color:var(--ink);
-}
+    --good:#c8f7c5;
+    --bad:#ffd6d6;
 
-.wrapper{
-  display:flex;
-  height:100vh;
-}
+    --accent:#1d3461;
+    --muted:#666;
+  }
 
-.sidebar{
-  width:280px;
-  background:#fff;
-  border-right:1px solid var(--ui);
-  padding:20px;
-  box-sizing:border-box;
-}
+  body{
+    margin:0;
+    background:var(--bg);
+    font-family: Georgia, "Times New Roman", serif;
+    color:var(--ink);
+  }
 
-.sidebar h2{
-  margin-top:0;
-}
+  .wrapper{
+    display:flex;
+    height:100vh;
+  }
 
-.resume{
-  flex:1;
-  overflow:auto;
-  padding:40px;
-}
+  .sidebar{
+    width:320px;
+    background:#fff;
+    border-right:1px solid var(--ui);
+    padding:18px 18px 22px;
+    box-sizing:border-box;
+    overflow:auto;
+  }
 
-.paper{
-  max-width:900px;
-  margin:auto;
-  background:var(--paper);
-  padding:40px;
-  box-shadow:0 0 10px rgba(0,0,0,.05);
-}
+  .sidebar h2{
+    margin:0 0 8px 0;
+    font-size:20px;
+    color:var(--accent);
+  }
 
-.token{
-  cursor:pointer;
-  padding:2px 3px;
-  border-radius:3px;
-}
+  .sidebar p{
+    margin:8px 0;
+    font-size:14px;
+    line-height:1.3;
+    color:#222;
+  }
 
-.token.good.selected{
-  background:var(--good);
-}
+  .hud{
+    margin-top:12px;
+    padding:12px;
+    border:1px solid var(--ui);
+    border-radius:10px;
+    background:#fafafa;
+    font-size:14px;
+  }
+  .hud .row{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    margin:6px 0;
+  }
+  .muted{ color:var(--muted); }
 
-.token.bad.flash{
-  background:var(--bad);
-}
+  .controls{
+    margin-top:12px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
 
-button{
-  padding:10px 15px;
-  margin-top:10px;
-  cursor:pointer;
-}
+  button{
+    padding:10px 12px;
+    border:1px solid var(--ui);
+    background:#fff;
+    border-radius:10px;
+    cursor:pointer;
+    font-family: inherit;
+    font-size:14px;
+  }
+  button.primary{
+    border-color:transparent;
+    background:var(--accent);
+    color:#fff;
+  }
+  button:disabled{
+    opacity:.55;
+    cursor:not-allowed;
+  }
 
-.results{
-  margin-top:20px;
-  font-size:.9rem;
-  line-height:1.4;
-}
+  .resume{
+    flex:1;
+    overflow:auto;
+    padding:34px 28px;
+  }
+
+  .paper{
+    max-width:980px;
+    margin:auto;
+    background:var(--paper);
+    padding:40px;
+    box-shadow:0 0 14px rgba(0,0,0,.07);
+    border-radius:10px;
+  }
+
+  h1{ margin:0 0 6px 0; font-size:34px; }
+  h2{ margin:18px 0 8px 0; font-size:18px; border-bottom:1px solid var(--ui); padding-bottom:6px; }
+  .meta{ margin:0 0 14px 0; color:#333; font-size:14px; }
+  .block{ margin:8px 0; font-size:14.5px; line-height:1.55; }
+
+  .token{
+    cursor:pointer;
+    padding:2px 3px;
+    border-radius:4px;
+    transition:background .12s ease, outline .12s ease;
+    white-space:nowrap;
+  }
+
+  .token.good.selected{ background:var(--good); }
+  .token.bad.flash{ background:var(--bad); }
+  .token.disabled{ cursor:default; }
+
+  .token.heat{
+    outline:2px solid rgba(0,0,0,0.06);
+    outline-offset:1px;
+  }
+
+  /* Heatmap intensities (set via JS with data-heat 0-5) */
+  .token[data-heat="0"].heat{ background:rgba(0,0,0,0.00); }
+  .token[data-heat="1"].heat{ background:rgba(255,215,0,0.10); }   /* very light */
+  .token[data-heat="2"].heat{ background:rgba(255,165,0,0.12); }
+  .token[data-heat="3"].heat{ background:rgba(255,140,0,0.14); }
+  .token[data-heat="4"].heat{ background:rgba(255,99,71,0.14); }
+  .token[data-heat="5"].heat{ background:rgba(255,69,0,0.16); }   /* hottest */
+
+  .panel{
+    margin-top:12px;
+    padding:12px;
+    border:1px solid var(--ui);
+    border-radius:10px;
+    background:#fafafa;
+    font-size:13.5px;
+    line-height:1.4;
+  }
+
+  .panel h3{
+    margin:0 0 8px 0;
+    font-size:14px;
+    color:var(--accent);
+  }
+
+  .list{
+    margin:6px 0 0 18px;
+    padding:0;
+  }
+  .list li{ margin:4px 0; }
+
+  .badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:999px;
+    border:1px solid var(--ui);
+    font-size:12px;
+    background:#fff;
+    margin-left:6px;
+  }
+
+  .tiny{
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .divider{ height:1px; background:var(--ui); margin:12px 0; }
+
+  .warning{
+    padding:10px 12px;
+    border:1px solid #f0d3a5;
+    background:#fff7ea;
+    border-radius:10px;
+    font-size:13px;
+  }
 </style>
 </head>
-
 <body>
 <div class="wrapper">
+  <aside class="sidebar">
+    <h2>ATS Optimization Simulator</h2>
+    <p class="muted">
+      Your job: click only terms that would improve ATS match quality (specific tools, methods, measurable outcomes, domain keywords).
+      Vague claims and “personality” phrases are decoys.
+    </p>
 
-<div class="sidebar">
-  <h2>ATS Simulator</h2>
-  <p>Click only words or phrases that would help this resume pass an ATS scan.</p>
-  <p><strong>Score:</strong> <span id="score">0</span></p>
-  <p><strong>Correct:</strong> <span id="correct">0</span></p>
-  <p><strong>Incorrect:</strong> <span id="incorrect">0</span></p>
-  <button onclick="finishGame()">Finish & Evaluate</button>
-  <div class="results" id="results"></div>
-</div>
+    <div class="hud" id="hud">
+      <div class="row"><span><strong>Level</strong></span><span id="hudLevel">—</span></div>
+      <div class="row"><span><strong>Resume</strong></span><span id="hudResume">—</span></div>
+      <div class="row"><span><strong>Time</strong></span><span id="hudTime">—</span></div>
+      <div class="row"><span><strong>Score</strong></span><span id="hudScore">0</span></div>
+      <div class="row"><span>Correct clicks</span><span id="hudCorrect">0</span></div>
+      <div class="row"><span>Incorrect clicks</span><span id="hudIncorrect">0</span></div>
+      <div class="row"><span>Coverage</span><span id="hudCoverage">0%</span></div>
+      <div class="row"><span>Accuracy</span><span id="hudAccuracy">—</span></div>
+    </div>
 
-<div class="resume">
-<div class="paper">
+    <div class="controls">
+      <button class="primary" id="btnStart">Start Level</button>
+      <button id="btnFinish" disabled>Finish & Evaluate</button>
+      <button id="btnNext" disabled>Next Level</button>
+      <button id="btnRestart">Restart Course</button>
+      <button id="btnHeat" disabled>Toggle ATS Heatmap</button>
+    </div>
 
-<h1>Jordan Martinez</h1>
-<p>
-<span class="token good">Digital Marketing Specialist</span> with 
-<span class="token good">5+ years experience</span> in 
-<span class="token good">SEO strategy</span>, 
-<span class="token good">content optimization</span>, and 
-<span class="token bad">making brands sparkle online</span>.
-</p>
+    <div class="panel" id="instructions">
+      <h3>Scoring</h3>
+      <ul class="list">
+        <li><strong>+5</strong> for an ATS-relevant keyword/phrase.</li>
+        <li><strong>-3</strong> for clicking a decoy/false positive.</li>
+        <li><strong>-1</strong> per missed high-impact keyword at the end.</li>
+        <li>Time pressure: when the timer ends, evaluation triggers automatically.</li>
+      </ul>
+      <div class="divider"></div>
+      <div class="tiny">
+        Heatmap shows “ATS weight” (hotter = more valuable). It’s disabled until you start.
+      </div>
+    </div>
 
-<h2>Skills</h2>
-<p>
-<span class="token good">Google Analytics</span>, 
-<span class="token good">GA4 implementation</span>, 
-<span class="token good">A/B testing</span>, 
-<span class="token good">conversion rate optimization</span>, 
-<span class="token bad">great communicator</span>, 
-<span class="token bad">team player</span>, 
-<span class="token good">CRM management</span>, 
-<span class="token good">HubSpot</span>, 
-<span class="token good">data visualization</span>, 
-<span class="token bad">detail-oriented</span>
-</p>
+    <div class="panel" id="results" style="display:none;">
+      <h3>Post-game breakdown</h3>
+      <div id="resultsBody"></div>
+    </div>
 
-<h2>Experience</h2>
-<p>
-Led <span class="token good">cross-functional collaboration</span> to improve 
-<span class="token good">customer acquisition</span> by 
-<span class="token good">27%</span> using 
-<span class="token good">targeted email marketing campaigns</span> and 
-<span class="token good">keyword research</span>.  
-Created <span class="token bad">fun and exciting posts</span> that increased 
-<span class="token good">engagement metrics</span>.  
-Implemented <span class="token good">SEO audits</span> and reduced 
-<span class="token good">bounce rate</span> by 
-<span class="token good">18%</span>.  
-Worked in a <span class="token bad">fast-paced environment</span> to deliver 
-<span class="token good">performance analytics reports</span>.
-</p>
+    <div class="warning" id="stateMsg" style="display:none; margin-top:12px;"></div>
+  </aside>
 
-<h2>Projects</h2>
-<p>
-Designed a <span class="token good">multi-channel digital strategy</span> integrating 
-<span class="token good">paid search</span>, 
-<span class="token good">organic traffic optimization</span>, and 
-<span class="token good">social media analytics</span>.  
-Helped company <span class="token bad">reach new heights</span> through 
-<span class="token good">market segmentation analysis</span>.
-</p>
-
-<h2>Education</h2>
-<p>
-B.A. in <span class="token good">Marketing Analytics</span>  
-Certified in <span class="token good">Google Ads</span> and 
-<span class="token good">Data-Driven Decision Making</span>
-</p>
-
-</div>
-</div>
+  <main class="resume">
+    <div class="paper" id="paper">
+      <h1>ATS Optimization Simulator</h1>
+      <p class="meta">
+        Click <strong>Start Level</strong> to load a randomized resume. You’ll play through progressively harder levels.
+      </p>
+      <div class="block">
+        This activity simulates an ATS keyword scan. Your task is not to “like” the resume — it’s to identify language that
+        would map cleanly to job requirements (tools, methods, competencies, and measurable outcomes).
+      </div>
+      <div class="block muted">
+        Tip: “hard” specificity usually wins over generic adjectives (e.g., <em>GA4 implementation</em> vs. <em>great communicator</em>).
+      </div>
+    </div>
+  </main>
 </div>
 
 <script>
-let score = 0;
-let correct = 0;
-let incorrect = 0;
+/* =========================
+   DATA: Progressive levels + randomized resumes
+   - Each resume is "dense": many tokens embedded.
+   - Tokens carry:
+     kind: "good" or "bad"
+     heat: 1..5 (ATS weight; bad defaults 0)
+     tag: category for diagnostics (tools, metrics, methods, soft-skill-decoy, etc.)
+   ========================= */
 
-const tokens = document.querySelectorAll('.token');
+const COURSE = [
+  {
+    level: 1,
+    name: "Baseline Scan",
+    timeSeconds: 70,
+    resumes: [
+      {
+        id: "L1-A",
+        title: "Digital Marketing / Analytics",
+        header: { name: "Jordan Martinez", location: "Boston, MA", email: "jordan.m@example.com" },
+        sections: [
+          sectionSummary([
+            good("Digital Marketing Specialist", 4, "title"),
+            good("SEO strategy", 4, "method"),
+            good("keyword research", 4, "method"),
+            good("GA4 implementation", 5, "tool"),
+            bad("making brands sparkle online", "soft-decoy"),
+            bad("passionate storyteller", "soft-decoy"),
+            good("conversion rate optimization", 4, "method"),
+            good("A/B testing", 4, "method"),
+            good("marketing performance reporting", 3, "deliverable"),
+            bad("fast learner", "soft-decoy")
+          ]),
+          sectionSkills([
+            good("Google Analytics", 5, "tool"),
+            good("Google Tag Manager", 5, "tool"),
+            good("Looker Studio", 4, "tool"),
+            good("HubSpot CRM", 4, "tool"),
+            good("email marketing automation", 3, "method"),
+            bad("team player", "soft-decoy"),
+            bad("detail-oriented", "soft-decoy"),
+            good("UTM governance", 4, "method"),
+            good("SQL (basic querying)", 3, "skill"),
+            bad("excellent vibes", "soft-decoy"),
+            good("content optimization", 3, "method"),
+            good("paid search", 3, "channel"),
+            bad("go-getter", "soft-decoy")
+          ]),
+          sectionExperience([
+            roleBlock("Digital Marketing Specialist", "Northridge Retail", "2022–Present", [
+              good("owned GA4 event taxonomy", 5, "tool"),
+              good("implemented GTM tags", 5, "tool"),
+              good("reduced bounce rate by 18%", 4, "metric"),
+              good("improved conversion rate by 22%", 4, "metric"),
+              bad("made posts pop", "soft-decoy"),
+              good("built weekly KPI dashboards", 3, "deliverable"),
+              good("ran A/B tests", 4, "method"),
+              bad("worked hard", "soft-decoy"),
+              good("optimized landing pages", 3, "method"),
+              good("stakeholder reporting", 3, "deliverable"),
+              bad("synergy mindset", "soft-decoy")
+            ]),
+            roleBlock("Marketing Coordinator", "Sable Health", "2020–2022", [
+              good("email segmentation", 3, "method"),
+              good("drip campaign automation", 3, "method"),
+              good("increased CTR by 31%", 4, "metric"),
+              good("maintained CRM data hygiene", 3, "method"),
+              bad("friendly personality", "soft-decoy"),
+              bad("great culture fit", "soft-decoy"),
+              good("content calendar management", 2, "deliverable"),
+              good("SEO audits", 4, "method")
+            ])
+          ]),
+          sectionProjects([
+            good("multi-channel digital strategy", 3, "deliverable"),
+            good("market segmentation analysis", 3, "method"),
+            bad("took the brand to new heights", "soft-decoy"),
+            good("competitive keyword gap analysis", 4, "method"),
+            good("pipeline attribution model", 4, "method"),
+            bad("creative genius", "soft-decoy")
+          ]),
+          sectionEducation([
+            good("B.A. Marketing Analytics", 3, "credential"),
+            good("Google Ads Certification", 3, "credential"),
+            good("Data-Driven Decision Making", 2, "credential"),
+            bad("lifelong learner", "soft-decoy")
+          ])
+        ]
+      },
+      {
+        id: "L1-B",
+        title: "Administrative / Operations",
+        header: { name: "Riley Chen", location: "Hartford, CT", email: "riley.c@example.com" },
+        sections: [
+          sectionSummary([
+            good("Operations Coordinator", 4, "title"),
+            good("process improvement", 4, "method"),
+            good("SOP documentation", 3, "deliverable"),
+            good("calendar and stakeholder management", 3, "deliverable"),
+            bad("people person", "soft-decoy"),
+            good("vendor coordination", 3, "deliverable"),
+            good("budget tracking", 3, "skill"),
+            bad("wears many hats", "soft-decoy")
+          ]),
+          sectionSkills([
+            good("Microsoft Excel (pivot tables)", 4, "tool"),
+            good("SharePoint", 3, "tool"),
+            good("Procurement workflows", 3, "method"),
+            good("invoice reconciliation", 3, "method"),
+            bad("multitasker", "soft-decoy"),
+            bad("positive attitude", "soft-decoy"),
+            good("meeting minutes and action logs", 3, "deliverable"),
+            good("Smartsheet", 3, "tool"),
+            good("basic data validation", 2, "skill")
+          ]),
+          sectionExperience([
+            roleBlock("Operations Coordinator", "Eastline Services", "2021–Present", [
+              good("reduced processing time by 25%", 4, "metric"),
+              good("standardized SOPs", 3, "deliverable"),
+              good("implemented intake form workflow", 4, "method"),
+              bad("always smiling", "soft-decoy"),
+              good("tracked budget variance", 3, "metric"),
+              good("managed vendor onboarding", 3, "deliverable"),
+              bad("rockstar", "soft-decoy")
+            ]),
+            roleBlock("Administrative Assistant", "Trident Education", "2019–2021", [
+              good("stakeholder scheduling", 3, "deliverable"),
+              good("meeting facilitation support", 2, "deliverable"),
+              good("document control", 3, "method"),
+              bad("hard worker", "soft-decoy"),
+              good("expense reporting", 3, "deliverable")
+            ])
+          ]),
+          sectionEducation([
+            good("A.S. Business Administration", 2, "credential"),
+            bad("excellent interpersonal skills", "soft-decoy")
+          ])
+        ]
+      }
+    ]
+  },
 
-tokens.forEach(token => {
-  token.addEventListener('click', () => {
+  {
+    level: 2,
+    name: "False Positive Trap",
+    timeSeconds: 60,
+    resumes: [
+      {
+        id: "L2-A",
+        title: "Project Management / Tech Adjacent",
+        header: { name: "Samira Patel", location: "New York, NY", email: "samira.p@example.com" },
+        sections: [
+          sectionSummary([
+            good("Project Coordinator", 4, "title"),
+            good("Agile ceremonies", 4, "method"),
+            good("Jira administration", 4, "tool"),
+            good("risk register management", 4, "deliverable"),
+            bad("results-driven", "soft-decoy"),
+            bad("strategic thinker", "soft-decoy"),
+            // False positives: sound technical but vague
+            bad("leveraged innovative solutions", "false-positive"),
+            bad("optimized synergy workflows", "false-positive"),
+            good("scope management", 4, "method"),
+            good("stakeholder communications plan", 3, "deliverable")
+          ]),
+          sectionSkills([
+            good("Jira", 4, "tool"),
+            good("Confluence", 3, "tool"),
+            good("status reporting", 3, "deliverable"),
+            good("requirements gathering", 4, "method"),
+            bad("proactive", "soft-decoy"),
+            bad("self-starter", "soft-decoy"),
+            bad("drives alignment", "false-positive"),
+            good("RAID logs", 4, "deliverable"),
+            good("UAT coordination", 4, "method"),
+            bad("thought leadership", "false-positive"),
+            good("meeting facilitation", 2, "skill")
+          ]),
+          sectionExperience([
+            roleBlock("Project Coordinator", "Cobalt Systems", "2022–Present", [
+              good("coordinated UAT", 4, "method"),
+              good("maintained Jira backlog", 4, "tool"),
+              good("reduced cycle time by 19%", 4, "metric"),
+              good("created weekly status reports", 3, "deliverable"),
+              bad("ensured stakeholder happiness", "soft-decoy"),
+              bad("activated innovative roadmaps", "false-positive"),
+              good("tracked risks and mitigations", 4, "deliverable"),
+              good("managed change requests", 4, "method")
+            ]),
+            roleBlock("Program Assistant", "Ridgewell Nonprofit", "2020–2022", [
+              good("coordinated cross-functional meetings", 3, "deliverable"),
+              good("maintained documentation", 2, "deliverable"),
+              bad("high-energy", "soft-decoy"),
+              bad("mission-aligned", "soft-decoy"),
+              good("tracked deliverables", 3, "deliverable")
+            ])
+          ]),
+          sectionEducation([
+            good("CAPM (in progress)", 2, "credential"),
+            bad("natural leader", "soft-decoy")
+          ])
+        ]
+      },
+      {
+        id: "L2-B",
+        title: "Communications / Content Strategy",
+        header: { name: "Avery King", location: "Philadelphia, PA", email: "avery.k@example.com" },
+        sections: [
+          sectionSummary([
+            good("Communications Specialist", 4, "title"),
+            good("content strategy", 4, "method"),
+            good("editorial calendar", 3, "deliverable"),
+            good("brand voice guidelines", 3, "deliverable"),
+            bad("excellent writing skills", "soft-decoy"),
+            bad("creative powerhouse", "soft-decoy"),
+            bad("executed high-impact narratives", "false-positive"),
+            good("social media analytics", 4, "tool"),
+            good("newsletter performance reporting", 3, "deliverable")
+          ]),
+          sectionSkills([
+            good("AP style", 3, "skill"),
+            good("SEO writing", 4, "method"),
+            good("Meta Business Suite", 3, "tool"),
+            good("Sprout Social", 3, "tool"),
+            bad("strong work ethic", "soft-decoy"),
+            bad("excellent communicator", "soft-decoy"),
+            bad("storytelling excellence", "false-positive"),
+            good("A/B subject line testing", 4, "method"),
+            good("engagement rate tracking", 3, "metric")
+          ]),
+          sectionExperience([
+            roleBlock("Communications Specialist", "Marrow University", "2021–Present", [
+              good("increased open rate by 24%", 4, "metric"),
+              good("improved CTR by 17%", 4, "metric"),
+              good("managed editorial calendar", 3, "deliverable"),
+              good("produced weekly analytics briefs", 3, "deliverable"),
+              bad("made content go viral", "false-positive"),
+              bad("crafted compelling stories", "false-positive"),
+              good("optimized web copy for SEO", 4, "method")
+            ])
+          ]),
+          sectionEducation([
+            good("B.A. Professional Writing", 2, "credential"),
+            good("Google Analytics Certificate", 3, "credential"),
+            bad("driven personality", "soft-decoy")
+          ])
+        ]
+      }
+    ]
+  },
 
-    if(token.classList.contains('selected')) return;
+  {
+    level: 3,
+    name: "Dense Keyword Heat (Hard)",
+    timeSeconds: 55,
+    resumes: [
+      {
+        id: "L3-A",
+        title: "Data / BI Analyst",
+        header: { name: "Noah Brooks", location: "Newark, NJ", email: "noah.b@example.com" },
+        sections: [
+          sectionSummary([
+            good("Business Intelligence Analyst", 5, "title"),
+            good("SQL", 5, "tool"),
+            good("Power BI", 5, "tool"),
+            good("data modeling", 5, "method"),
+            bad("numbers ninja", "false-positive"),
+            bad("data wizard", "false-positive"),
+            good("ETL pipelines", 5, "method"),
+            good("KPI definition", 4, "method"),
+            good("stakeholder requirements", 4, "method"),
+            bad("innovative analytics", "false-positive"),
+            good("dashboard governance", 4, "deliverable")
+          ]),
+          sectionSkills([
+            good("SQL (joins, window functions)", 5, "tool"),
+            good("Power BI DAX", 5, "tool"),
+            good("dimensional modeling (star schema)", 5, "method"),
+            good("data quality checks", 4, "method"),
+            good("Python (pandas)", 4, "tool"),
+            good("Git version control", 3, "tool"),
+            bad("results-oriented", "soft-decoy"),
+            bad("strategic mindset", "soft-decoy"),
+            bad("leveraged cutting-edge insights", "false-positive"),
+            good("A/B experiment analysis", 4, "method"),
+            good("data visualization best practices", 3, "skill"),
+            bad("culture champion", "soft-decoy")
+          ]),
+          sectionExperience([
+            roleBlock("BI Analyst", "Evernorth Logistics", "2022–Present", [
+              good("built Power BI executive dashboards", 5, "deliverable"),
+              good("reduced manual reporting by 40%", 5, "metric"),
+              good("implemented ETL with incremental loads", 5, "method"),
+              good("defined KPI catalog", 4, "deliverable"),
+              good("created SQL views for self-service analytics", 5, "tool"),
+              bad("delivered world-class insights", "false-positive"),
+              bad("unlocked hidden value", "false-positive"),
+              good("performed root-cause analysis", 4, "method"),
+              good("owned data validation rules", 4, "method"),
+              good("partnered with Finance & Ops", 3, "deliverable")
+            ]),
+            roleBlock("Data Analyst", "Meadowline Care", "2020–2022", [
+              good("cohort analysis", 4, "method"),
+              good("forecast variance reporting", 4, "deliverable"),
+              good("improved data accuracy by 15%", 4, "metric"),
+              bad("detail-oriented", "soft-decoy"),
+              bad("go-getter", "soft-decoy"),
+              good("built automated extracts", 4, "method")
+            ])
+          ]),
+          sectionProjects([
+            good("customer churn model (logistic regression)", 5, "method"),
+            good("feature engineering", 4, "method"),
+            good("model performance evaluation (AUC)", 4, "metric"),
+            bad("AI magic", "false-positive"),
+            good("executive-ready deck with KPIs", 3, "deliverable")
+          ]),
+          sectionEducation([
+            good("B.S. Information Systems", 3, "credential"),
+            good("Microsoft Power BI Certification", 3, "credential"),
+            bad("natural problem-solver", "soft-decoy")
+          ])
+        ]
+      },
+      {
+        id: "L3-B",
+        title: "HR / Talent Ops",
+        header: { name: "Elena Rivera", location: "New Haven, CT", email: "elena.r@example.com" },
+        sections: [
+          sectionSummary([
+            good("Talent Acquisition Coordinator", 4, "title"),
+            good("ATS administration", 5, "tool"),
+            good("requisition management", 4, "method"),
+            good("interview scheduling", 3, "deliverable"),
+            bad("people-first", "soft-decoy"),
+            bad("great with people", "soft-decoy"),
+            bad("candidate experience champion", "false-positive"),
+            good("offer letter process", 3, "deliverable"),
+            good("EEO reporting support", 4, "deliverable"),
+            good("screening criteria calibration", 4, "method")
+          ]),
+          sectionSkills([
+            good("Greenhouse ATS", 5, "tool"),
+            good("Workday (recruiting module)", 4, "tool"),
+            good("background check coordination", 3, "deliverable"),
+            good("structured interview guides", 4, "method"),
+            bad("empathetic", "soft-decoy"),
+            bad("high energy", "soft-decoy"),
+            bad("built amazing relationships", "false-positive"),
+            good("candidate pipeline tracking", 4, "deliverable"),
+            good("offer approvals workflow", 3, "method")
+          ]),
+          sectionExperience([
+            roleBlock("TA Coordinator", "Northbay Labs", "2022–Present", [
+              good("managed 40+ open requisitions", 4, "metric"),
+              good("reduced time-to-schedule by 28%", 4, "metric"),
+              good("maintained ATS data integrity", 5, "method"),
+              bad("delighted candidates", "false-positive"),
+              bad("rockstar recruiter support", "false-positive"),
+              good("built interview panels", 3, "deliverable"),
+              good("published weekly pipeline reports", 4, "deliverable"),
+              good("coordinated hiring manager debriefs", 3, "deliverable")
+            ])
+          ]),
+          sectionEducation([
+            good("B.A. Human Resources", 2, "credential"),
+            good("SHRM-CP (in progress)", 2, "credential"),
+            bad("excellent interpersonal skills", "soft-decoy")
+          ])
+        ]
+      }
+    ]
+  }
+];
 
-    if(token.classList.contains('good')){
-      token.classList.add('selected');
-      score += 5;
-      correct++;
-    } else {
-      incorrect++;
-      score -= 2;
-      token.classList.add('flash');
-      buzz();
-      setTimeout(()=>token.classList.remove('flash'),400);
-    }
+/* =========================
+   Helpers to define tokens & sections
+   ========================= */
+function good(text, heat=3, tag="keyword"){ return { text, kind:"good", heat, tag }; }
+function bad(text, tag="soft-decoy"){ return { text, kind:"bad", heat:0, tag }; }
 
-    updateStats();
-  });
-});
+function sectionSummary(tokens){ return { heading:"Summary", type:"para", tokens }; }
+function sectionSkills(tokens){ return { heading:"Core Skills", type:"skills", tokens }; }
+function sectionProjects(...tokens){ return { heading:"Selected Projects", type:"para", tokens: tokens.flat() }; }
+function sectionEducation(tokens){ return { heading:"Education & Credentials", type:"para", tokens }; }
+function sectionExperience(blocks){ return { heading:"Experience", type:"roles", roles: blocks }; }
 
-function updateStats(){
-  document.getElementById('score').textContent = score;
-  document.getElementById('correct').textContent = correct;
-  document.getElementById('incorrect').textContent = incorrect;
+function roleBlock(title, org, dates, tokens){
+  return { title, org, dates, tokens };
 }
 
-function finishGame(){
-  const totalGood = document.querySelectorAll('.token.good').length;
-  const accuracy = Math.round((correct / totalGood) * 100);
+/* =========================
+   Game state
+   ========================= */
+let currentLevelIndex = 0;
+let currentResume = null;
+let started = false;
+let finished = false;
 
-  let evaluation = "";
+let score = 0;
+let correctClicks = 0;
+let incorrectClicks = 0;
+let totalGood = 0;
+let clickedGood = new Set();
+let clickedBad = [];
 
-  if(accuracy >= 85){
-    evaluation = "Excellent keyword recognition. You are identifying industry-specific terminology, quantifiable metrics, and software platforms effectively.";
-  } else if(accuracy >= 60){
-    evaluation = "Moderate ATS literacy. You recognize many functional keywords but may be missing quantifiable impact or technical specificity.";
+let timer = null;
+let timeLeft = 0;
+let heatmapOn = false;
+
+const elPaper = document.getElementById("paper");
+const elResults = document.getElementById("results");
+const elResultsBody = document.getElementById("resultsBody");
+const elStateMsg = document.getElementById("stateMsg");
+
+const btnStart = document.getElementById("btnStart");
+const btnFinish = document.getElementById("btnFinish");
+const btnNext = document.getElementById("btnNext");
+const btnRestart = document.getElementById("btnRestart");
+const btnHeat = document.getElementById("btnHeat");
+
+btnStart.addEventListener("click", startLevel);
+btnFinish.addEventListener("click", finishLevel);
+btnNext.addEventListener("click", nextLevel);
+btnRestart.addEventListener("click", restartCourse);
+btnHeat.addEventListener("click", toggleHeatmap);
+
+updateHUD();
+
+/* =========================
+   Core flow
+   ========================= */
+function startLevel(){
+  const level = COURSE[currentLevelIndex];
+  started = true;
+  finished = false;
+  heatmapOn = false;
+
+  // Pick randomized resume
+  currentResume = level.resumes[Math.floor(Math.random() * level.resumes.length)];
+
+  // Reset scoring
+  score = 0;
+  correctClicks = 0;
+  incorrectClicks = 0;
+  clickedGood = new Set();
+  clickedBad = [];
+
+  // Render
+  renderResume(level, currentResume);
+
+  // Compute total good tokens
+  totalGood = countGoodTokens(currentResume);
+
+  // Timer
+  clearInterval(timer);
+  timeLeft = level.timeSeconds;
+  timer = setInterval(() => {
+    timeLeft--;
+    if(timeLeft <= 0){
+      timeLeft = 0;
+      clearInterval(timer);
+      finishLevel(true);
+    }
+    updateHUD();
+  }, 1000);
+
+  // UI toggles
+  btnFinish.disabled = false;
+  btnHeat.disabled = false;
+  btnNext.disabled = true;
+  elResults.style.display = "none";
+  setStateMsg("");
+
+  updateHUD();
+}
+
+function finishLevel(auto=false){
+  if(!started || finished) return;
+  finished = true;
+  clearInterval(timer);
+
+  // Disable further clicks
+  document.querySelectorAll(".token").forEach(t => t.classList.add("disabled"));
+
+  // Apply end penalties: missed high-impact goods
+  const missed = getMissedGoodTokens(currentResume);
+  const missedHigh = missed.filter(m => m.heat >= 4);
+  score -= missedHigh.length * 1; // -1 per missed high-impact
+
+  // Build breakdown
+  const level = COURSE[currentLevelIndex];
+  const accuracy = computeAccuracy();
+  const coverage = computeCoverage();
+
+  const diagnosis = buildDiagnosis({level, accuracy, coverage, missed, missedHigh, clickedBad});
+  const breakdownHTML = buildBreakdownHTML({level, accuracy, coverage, missed, missedHigh, clickedBad});
+
+  elResultsBody.innerHTML = breakdownHTML + `<div class="divider"></div><div>${diagnosis}</div>`;
+  elResults.style.display = "block";
+
+  btnFinish.disabled = true;
+  btnHeat.disabled = false; // allow toggling heatmap after
+  btnNext.disabled = (currentLevelIndex >= COURSE.length - 1) ? true : false;
+
+  if(auto){
+    setStateMsg("Time expired — auto-submitted for evaluation.");
   } else {
-    evaluation = "Surface-level scanning. You may be mistaking soft skills for ATS-relevant keywords. Revisit the difference between measurable impact and vague descriptors.";
+    setStateMsg("");
   }
 
-  document.getElementById('results').innerHTML =
-    "<strong>Accuracy:</strong> " + accuracy + "%<br><br>" +
-    evaluation;
+  updateHUD();
+}
+
+function nextLevel(){
+  if(currentLevelIndex >= COURSE.length - 1) return;
+  currentLevelIndex++;
+  started = false;
+  finished = false;
+  currentResume = null;
+  clearInterval(timer);
+  timeLeft = 0;
+  heatmapOn = false;
+
+  elPaper.innerHTML = `
+    <h1>Level ${COURSE[currentLevelIndex].level}: ${escapeHTML(COURSE[currentLevelIndex].name)}</h1>
+    <p class="meta">Click <strong>Start Level</strong> to load a randomized resume for this level.</p>
+    <div class="block muted">
+      This level increases density and adds more false positives that “sound professional” but don’t map to job requirements.
+    </div>
+  `;
+  elResults.style.display = "none";
+  btnFinish.disabled = true;
+  btnNext.disabled = true;
+  btnHeat.disabled = true;
+  setStateMsg("");
+
+  updateHUD();
+}
+
+function restartCourse(){
+  currentLevelIndex = 0;
+  started = false;
+  finished = false;
+  currentResume = null;
+  clearInterval(timer);
+  timeLeft = 0;
+  heatmapOn = false;
+
+  elPaper.innerHTML = `
+    <h1>ATS Optimization Simulator</h1>
+    <p class="meta">
+      Click <strong>Start Level</strong> to load a randomized resume. You’ll play through progressively harder levels.
+    </p>
+    <div class="block">
+      This activity simulates an ATS keyword scan. Your task is not to “like” the resume — it’s to identify language that
+      would map cleanly to job requirements (tools, methods, competencies, and measurable outcomes).
+    </div>
+    <div class="block muted">
+      Tip: “hard” specificity usually wins over generic adjectives (e.g., <em>GA4 implementation</em> vs. <em>great communicator</em>).
+    </div>
+  `;
+  elResults.style.display = "none";
+  btnFinish.disabled = true;
+  btnNext.disabled = true;
+  btnHeat.disabled = true;
+  setStateMsg("");
+
+  updateHUD();
+}
+
+function toggleHeatmap(){
+  if(!started) return;
+  heatmapOn = !heatmapOn;
+  document.querySelectorAll(".token").forEach(t => {
+    if(heatmapOn){
+      t.classList.add("heat");
+    } else {
+      t.classList.remove("heat");
+    }
+  });
+}
+
+/* =========================
+   Rendering
+   ========================= */
+function renderResume(level, resume){
+  const header = resume.header;
+
+  let html = `
+    <h1>${escapeHTML(header.name)}</h1>
+    <p class="meta">${escapeHTML(header.location)} • ${escapeHTML(header.email)} • <span class="badge">Level ${level.level}</span> <span class="badge">${escapeHTML(resume.title)}</span></p>
+  `;
+
+  resume.sections.forEach(sec => {
+    html += `<h2>${escapeHTML(sec.heading)}</h2>`;
+
+    if(sec.type === "para"){
+      html += `<div class="block">${renderTokensInline(sec.tokens)}</div>`;
+    } else if(sec.type === "skills"){
+      html += `<div class="block">${renderTokensComma(sec.tokens)}</div>`;
+    } else if(sec.type === "roles"){
+      sec.roles.forEach(r => {
+        html += `
+          <div class="block">
+            <strong>${escapeHTML(r.title)}</strong>, ${escapeHTML(r.org)} <span class="muted">(${escapeHTML(r.dates)})</span><br/>
+            ${renderTokensInline(r.tokens)}
+          </div>
+        `;
+      });
+    }
+  });
+
+  elPaper.innerHTML = html;
+
+  // Wire click handlers
+  document.querySelectorAll(".token").forEach(span => {
+    span.addEventListener("click", () => handleTokenClick(span));
+  });
+
+  updateHUD();
+}
+
+function renderTokensInline(tokens){
+  // Dense: render as sentence-like fragments.
+  // We'll join with separators that keep density high.
+  const parts = tokens.map((t, i) => {
+    const sep = (i === 0) ? "" : (i % 3 === 0 ? ". " : "; ");
+    return `${sep}${tokenSpan(t)}`;
+  });
+  return parts.join("") + ".";
+}
+
+function renderTokensComma(tokens){
+  return tokens.map(tokenSpan).join(", ") + ".";
+}
+
+function tokenSpan(t){
+  const safe = escapeHTML(t.text);
+  const kindClass = t.kind === "good" ? "good" : "bad";
+  const heat = (t.kind === "good") ? t.heat : 0;
+  const tag = escapeHTML(t.tag || "");
+  return `<span class="token ${kindClass}" data-kind="${kindClass}" data-heat="${heat}" data-tag="${tag}" data-text="${escapeHTML(t.text)}">${safe}</span>`;
+}
+
+/* =========================
+   Interaction
+   ========================= */
+function handleTokenClick(span){
+  if(finished) return;
+  if(span.classList.contains("disabled")) return;
+
+  const kind = span.dataset.kind;
+  const text = span.dataset.text;
+  const heat = parseInt(span.dataset.heat || "0", 10);
+  const tag = span.dataset.tag || "";
+
+  // prevent re-click scoring
+  if(span.classList.contains("selected")) return;
+
+  if(kind === "good"){
+    span.classList.add("selected");
+    clickedGood.add(text);
+    correctClicks++;
+    score += 5;
+  } else {
+    incorrectClicks++;
+    score -= 3;
+    clickedBad.push({ text, tag });
+    span.classList.add("flash");
+    buzz();
+    setTimeout(() => span.classList.remove("flash"), 350);
+  }
+
+  updateHUD();
 }
 
 function buzz(){
-  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  const oscillator = audioCtx.createOscillator();
-  oscillator.type = 'sawtooth';
-  oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
-  oscillator.connect(audioCtx.destination);
-  oscillator.start();
-  setTimeout(()=>oscillator.stop(),150);
+  try{
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(190, ctx.currentTime);
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    setTimeout(() => { osc.stop(); ctx.close(); }, 140);
+  }catch(e){
+    // audio may be blocked; ignore
+  }
+}
+
+/* =========================
+   Breakdown + diagnostics
+   ========================= */
+function countGoodTokens(resume){
+  let count = 0;
+  resume.sections.forEach(sec => {
+    if(sec.type === "roles"){
+      sec.roles.forEach(r => r.tokens.forEach(t => { if(t.kind === "good") count++; }));
+    } else {
+      (sec.tokens || []).forEach(t => { if(t.kind === "good") count++; });
+    }
+  });
+  return count;
+}
+
+function listAllGoodTokens(resume){
+  const goods = [];
+  resume.sections.forEach(sec => {
+    if(sec.type === "roles"){
+      sec.roles.forEach(r => r.tokens.forEach(t => { if(t.kind === "good") goods.push(t); }));
+    } else {
+      (sec.tokens || []).forEach(t => { if(t.kind === "good") goods.push(t); });
+    }
+  });
+  return goods;
+}
+
+function getMissedGoodTokens(resume){
+  const goods = listAllGoodTokens(resume);
+  return goods.filter(t => !clickedGood.has(t.text));
+}
+
+function computeCoverage(){
+  if(totalGood === 0) return 0;
+  return Math.round((clickedGood.size / totalGood) * 100);
+}
+
+function computeAccuracy(){
+  const totalClicks = correctClicks + incorrectClicks;
+  if(totalClicks === 0) return null;
+  return Math.round((correctClicks / totalClicks) * 100);
+}
+
+function buildBreakdownHTML({level, accuracy, coverage, missed, missedHigh, clickedBad}){
+  const totalClicks = correctClicks + incorrectClicks;
+
+  const topMissed = missed
+    .sort((a,b) => (b.heat - a.heat))
+    .slice(0, 12);
+
+  const badByTag = groupBy(clickedBad.map(x => x.tag || "uncategorized"));
+  const badLines = Object.keys(badByTag).sort((a,b)=>badByTag[b]-badByTag[a]).slice(0,6)
+    .map(tag => `<li>${escapeHTML(tag)}: <strong>${badByTag[tag]}</strong></li>`).join("");
+
+  const missedLines = topMissed.length
+    ? topMissed.map(t => `<li><strong>${escapeHTML(t.text)}</strong> <span class="tiny">(heat ${t.heat}, ${escapeHTML(t.tag)})</span></li>`).join("")
+    : `<li>None.</li>`;
+
+  const badExamples = clickedBad.slice(0, 10).map(x => `<li><strong>${escapeHTML(x.text)}</strong> <span class="tiny">(${escapeHTML(x.tag)})</span></li>`).join("");
+
+  return `
+    <div class="row"><span><strong>Level</strong></span><span>${level.level}: ${escapeHTML(level.name)}</span></div>
+    <div class="row"><span><strong>Score</strong></span><span>${score}</span></div>
+    <div class="row"><span>Total clicks</span><span>${totalClicks}</span></div>
+    <div class="row"><span>Correct clicks</span><span>${correctClicks}</span></div>
+    <div class="row"><span>Incorrect clicks</span><span>${incorrectClicks}</span></div>
+    <div class="row"><span>Coverage (found good)</span><span>${coverage}%</span></div>
+    <div class="row"><span>Accuracy (click precision)</span><span>${accuracy === null ? "—" : accuracy + "%"}</span></div>
+
+    <div class="divider"></div>
+
+    <h3>Missed high-value keywords</h3>
+    <ul class="list">${missedLines}</ul>
+
+    <div class="divider"></div>
+
+    <h3>What you clicked incorrectly</h3>
+    ${clickedBad.length ? `<ul class="list">${badExamples}</ul>` : `<div class="tiny">No incorrect clicks.</div>`}
+
+    <div class="divider"></div>
+
+    <h3>Decoy pattern summary</h3>
+    ${clickedBad.length ? `<ul class="list">${badLines}</ul>` : `<div class="tiny">No decoy patterns detected.</div>`}
+
+    <div class="divider"></div>
+
+    <div class="tiny">
+      End penalty applied: -1 per missed keyword with heat ≥ 4. (Missed high-impact count: ${missedHigh.length})
+    </div>
+  `;
+}
+
+function buildDiagnosis({level, accuracy, coverage, missedHigh, clickedBad}){
+  // Clinical, short, actionable.
+  const acc = accuracy === null ? 0 : accuracy;
+
+  let band = "";
+  if(acc >= 85 && coverage >= 70) band = "Strong ATS scanning: high precision and coverage.";
+  else if(acc >= 70 && coverage >= 55) band = "Competent scan: generally accurate, but leaving match points on the table.";
+  else if(acc >= 55) band = "Inconsistent scan: you recognize some keywords but over-click decoys or miss core terms.";
+  else band = "Low signal-to-noise: clicking style language more than match language.";
+
+  // Identify dominant decoy type
+  const badTagCounts = groupBy(clickedBad.map(x => x.tag || "uncategorized"));
+  const dominantBadTag = Object.keys(badTagCounts).sort((a,b)=>badTagCounts[b]-badTagCounts[a])[0];
+
+  const missHint = missedHigh.length
+    ? `You missed ${missedHigh.length} high-impact terms. Prioritize tools/methods/metrics first; leave adjectives for last.`
+    : `High-impact terms were mostly captured; now improve by reducing decoy clicks.`;
+
+  const decoyHint = clickedBad.length
+    ? `Most incorrect clicks were "${escapeHTML(dominantBadTag)}" style phrases. Treat these as “human-readable” but ATS-low.`
+    : `Minimal decoy clicking—good discipline under time pressure.`;
+
+  const nextHint = (level.level < COURSE.length)
+    ? `Next level increases density and “false positives” that sound professional but don’t map cleanly to requirements.`
+    : `Course complete. If you want a mastery mode, add stricter scoring (+3 for heat≤2 keywords, +7 for heat≥5).`;
+
+  return `
+    <strong>Assessment:</strong> ${band}<br/>
+    <strong>Next move:</strong> ${missHint}<br/>
+    <strong>Decoy control:</strong> ${decoyHint}<br/>
+    <strong>Progression:</strong> ${nextHint}
+  `;
+}
+
+/* =========================
+   HUD & utilities
+   ========================= */
+function updateHUD(){
+  const level = COURSE[currentLevelIndex];
+  document.getElementById("hudLevel").textContent = `${level.level} — ${level.name}`;
+  document.getElementById("hudResume").textContent = currentResume ? currentResume.id : "—";
+  document.getElementById("hudTime").textContent = started ? `${timeLeft}s` : "—";
+  document.getElementById("hudScore").textContent = score;
+  document.getElementById("hudCorrect").textContent = correctClicks;
+  document.getElementById("hudIncorrect").textContent = incorrectClicks;
+
+  const coverage = started ? computeCoverage() : 0;
+  document.getElementById("hudCoverage").textContent = `${coverage}%`;
+
+  const acc = started ? computeAccuracy() : null;
+  document.getElementById("hudAccuracy").textContent = (acc === null) ? "—" : `${acc}%`;
+}
+
+function setStateMsg(msg){
+  if(!msg){
+    elStateMsg.style.display = "none";
+    elStateMsg.textContent = "";
+    return;
+  }
+  elStateMsg.style.display = "block";
+  elStateMsg.textContent = msg;
+}
+
+function groupBy(arr){
+  const m = {};
+  arr.forEach(x => { m[x] = (m[x] || 0) + 1; });
+  return m;
+}
+
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[s]));
 }
 </script>
-
 </body>
 </html>
