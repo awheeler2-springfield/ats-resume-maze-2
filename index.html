@@ -7,10 +7,10 @@
 
 <style>
 :root{
-  --bg:#f4f4f4;
+  --bg:#e9e9e9;
   --paper:#ffffff;
   --ink:#111;
-  --ui:#e2e2e2;
+  --ui:#dcdcdc;
   --good:#c8f7c5;
   --bad:#ffd6d6;
   --accent:#1d3461;
@@ -19,42 +19,78 @@
 body{
   margin:0;
   background:var(--bg);
-  font-family:Georgia, "Times New Roman", serif;
+  font-family:Arial, Helvetica, sans-serif;
   color:var(--ink);
 }
 
-.wrapper{ display:flex; height:100vh; }
+.wrapper{
+  display:flex;
+  height:100vh;
+}
 
 .sidebar{
-  width:330px;
+  width:320px;
   background:#fff;
   border-right:1px solid var(--ui);
-  padding:18px;
-  overflow:auto;
+  padding:20px;
   box-sizing:border-box;
 }
 
 .resume{
   flex:1;
   overflow:auto;
-  padding:34px 28px;
+  padding:40px;
 }
 
 .paper{
-  max-width:980px;
+  width:850px;
   margin:auto;
   background:var(--paper);
-  padding:40px;
-  box-shadow:0 0 14px rgba(0,0,0,.07);
-  border-radius:10px;
+  padding:60px 70px;
+  box-shadow:0 0 25px rgba(0,0,0,.08);
 }
 
-h1{ margin:0 0 6px 0; }
-h2{ margin:18px 0 8px 0; border-bottom:1px solid var(--ui); padding-bottom:6px; }
+h1{
+  text-align:center;
+  margin-bottom:8px;
+  letter-spacing:1px;
+}
+
+.subhead{
+  text-align:center;
+  font-size:14px;
+  margin-bottom:20px;
+}
+
+.section{
+  margin-top:28px;
+}
+
+.section h2{
+  font-size:16px;
+  border-bottom:2px solid #000;
+  padding-bottom:4px;
+  margin-bottom:10px;
+}
+
+.role{
+  margin-bottom:16px;
+}
+
+.role-header{
+  display:flex;
+  justify-content:space-between;
+  font-weight:bold;
+}
+
+ul{
+  margin-top:6px;
+  margin-bottom:6px;
+}
 
 .token{
   cursor:pointer;
-  padding:2px 4px;
+  padding:2px 3px;
   border-radius:4px;
 }
 
@@ -62,228 +98,181 @@ h2{ margin:18px 0 8px 0; border-bottom:1px solid var(--ui); padding-bottom:6px; 
 .token.bad.flash{ background:var(--bad); }
 
 button{
-  padding:10px 12px;
+  padding:10px;
+  border-radius:6px;
   border:1px solid var(--ui);
-  background:#fff;
-  border-radius:10px;
   cursor:pointer;
-  margin-top:8px;
-}
-
-button.primary{
-  background:var(--accent);
-  color:#fff;
-  border:none;
+  margin-top:10px;
 }
 
 .hud{
-  margin-top:12px;
-  padding:12px;
-  border:1px solid var(--ui);
-  border-radius:10px;
-  background:#fafafa;
+  margin-top:20px;
   font-size:14px;
 }
 
-.hud .row{
-  display:flex;
-  justify-content:space-between;
-  margin:6px 0;
-}
-
-.panel{
-  margin-top:12px;
-  padding:12px;
-  border:1px solid var(--ui);
-  border-radius:10px;
-  background:#fafafa;
-  font-size:14px;
+.hud div{
+  margin-bottom:6px;
 }
 </style>
 </head>
+
 <body>
 <div class="wrapper">
 
-<aside class="sidebar">
-<h2>ATS Optimization Simulator</h2>
+<div class="sidebar">
+<h2>ATS Scan</h2>
 
 <div class="hud">
-<div class="row"><span>Level</span><span id="hudLevel">—</span></div>
-<div class="row"><span>Time</span><span id="hudTime">—</span></div>
-<div class="row"><span>Score</span><span id="hudScore">0</span></div>
-<div class="row"><span>Correct</span><span id="hudCorrect">0</span></div>
-<div class="row"><span>Incorrect</span><span id="hudIncorrect">0</span></div>
+<div>Level: <span id="level">—</span></div>
+<div>Time: <span id="time">—</span></div>
+<div>Score: <span id="score">0</span></div>
+<div>Correct: <span id="correct">0</span></div>
+<div>Incorrect: <span id="incorrect">0</span></div>
 </div>
 
-<button class="primary" id="btnStart">Start</button>
-<button id="btnFinish" disabled>Finish</button>
-<button id="btnNext" disabled>Next Level</button>
-<button id="btnRestart">Restart</button>
+<button onclick="start()">Start</button>
+<button onclick="finish()">Finish</button>
+<button onclick="location.reload()">Restart</button>
 
-<div class="panel" id="results" style="display:none;"></div>
-</aside>
+<div id="results" style="margin-top:20px;"></div>
+</div>
 
-<main class="resume">
+<div class="resume">
 <div class="paper" id="paper">
 <h1>ATS Optimization Simulator</h1>
-<p>45 seconds. Click only measurable, structured, role-relevant language. Ready?</p>
+<p style="text-align:center;">45 seconds. Click measurable, structured, role-relevant language.</p>
 </div>
-</main>
+</div>
 
 </div>
 
 <script>
 
-/* ---------- Buzz (consistent) ---------- */
+/* ---------- Buzz ---------- */
 
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function buzz(){
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
-  osc.type = "square";
-  osc.frequency.value = 170;
-  gain.gain.value = 0.12;
+  osc.type="square";
+  osc.frequency.value=170;
+  gain.gain.value=.12;
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.2);
+  osc.stop(audioCtx.currentTime+.2);
 }
 
-/* ---------- Levels (45 seconds each) ---------- */
+/* ---------- Level Data ---------- */
 
-const LEVELS = [
+const resumeHTML = `
+<h1>MICHAEL HARRIS</h1>
+<div class="subhead">
+Digital Marketing | SEO | SEM | Content Strategy<br>
+Sydney, Australia | michael.harris@email.com | +61 412 345 678
+</div>
 
-{
-time:45,
-content:`
-<h1>Avery Morgan</h1>
-<h2>Summary</h2>
+<div class="section">
+<h2>PROFESSIONAL SUMMARY</h2>
 <p>
-<span class="token good">Marketing Coordinator</span>;
-<span class="token good">content calendar management</span>;
-<span class="token good">email segmentation</span>;
-<span class="token good">engagement rate tracking</span>;
-<span class="token bad">creative powerhouse</span>;
-<span class="token bad">visionary brand architect</span>;
-<span class="token good">A/B subject line testing</span>;
-<span class="token good">SEO copywriting</span>;
-<span class="token bad">results-driven storyteller</span>.
+<span class="token bad">Results-oriented marketing professional</span> with 
+<span class="token good">5+ years of experience</span> in 
+<span class="token good">digital marketing strategy</span>, 
+<span class="token good">SEO & SEM execution</span>, and 
+<span class="token good">analytics-driven campaign optimization</span>. 
+<span class="token bad">Proven ability to drive growth</span> and 
+<span class="token good">increase online engagement by 40%</span>.
 </p>
-<h2>Experience</h2>
-<p>
-Increased <span class="token good">newsletter open rate by 28%</span>;
-Managed <span class="token good">social media analytics dashboards</span>;
-Implemented <span class="token good">Google Analytics tracking</span>;
-Optimized <span class="token good">landing page conversion rate</span>;
-<span class="token bad">energized cross-functional vibes</span>;
-<span class="token bad">elevated brand presence</span>.
-</p>
-<h2>Campus Leadership</h2>
-<p>
-<span class="token good">President, Communications Club</span>;
-Oversaw <span class="token good">$12,000 event budget</span>;
-Coordinated <span class="token good">interdepartmental logistics</span>;
-<span class="token bad">campus inspiration</span>.
-</p>
-`
-},
+</div>
 
-{
-time:45,
-content:`
-<h1>Riley Chen</h1>
-<h2>Summary</h2>
-<p>
-<span class="token good">Operations Coordinator</span>;
-<span class="token good">process improvement</span>;
-<span class="token good">SOP documentation</span>;
-<span class="token good">vendor management</span>;
-<span class="token bad">organizational ninja</span>;
-<span class="token bad">culture champion</span>.
-</p>
-<h2>Experience</h2>
-<p>
-Reduced <span class="token good">processing time by 32%</span>;
-Maintained <span class="token good">compliance documentation</span>;
-Implemented <span class="token good">workflow automation</span>;
-Tracked <span class="token good">budget variance reporting</span>;
-<span class="token bad">boosted morale</span>.
-</p>
-<h2>Residence Life</h2>
-<p>
-<span class="token good">Resident Assistant</span>;
-Managed <span class="token good">incident documentation</span>;
-Organized <span class="token good">program logistics</span>;
-<span class="token bad">hallway hero</span>.
-</p>
-`
-},
+<div class="section">
+<h2>WORK EXPERIENCE</h2>
 
-{
-time:45,
-content:`
-<h1>Jordan Ellis</h1>
-<h2>Summary</h2>
-<p>
-<span class="token good">HR Generalist</span>;
-<span class="token good">employee onboarding</span>;
-<span class="token good">HRIS administration</span>;
-<span class="token good">benefits coordination</span>;
-<span class="token bad">people-first visionary</span>.
-</p>
-<h2>Experience</h2>
-<p>
-Managed <span class="token good">40+ open requisitions</span>;
-Reduced <span class="token good">time-to-hire by 21%</span>;
-Maintained <span class="token good">compliance tracking systems</span>;
-Produced <span class="token good">weekly HR metrics reports</span>;
-<span class="token bad">championed harmony</span>.
-</p>
-<h2>Peer Mentor</h2>
-<p>
-Tracked <span class="token good">mentorship attendance data</span>;
-Maintained <span class="token good">progress documentation</span>;
-<span class="token bad">inspirational presence</span>.
-</p>
-`
-}
+<div class="role">
+<div class="role-header">
+<span>Marketing Manager — XYZ Corporation</span>
+<span>Jan 2022 – Present</span>
+</div>
+<ul>
+<li><span class="token good">Led cross-functional team of 6</span> executing 
+<span class="token good">multi-channel marketing campaigns</span>.</li>
+<li>Increased <span class="token good">website traffic by 35%</span> and 
+<span class="token good">social engagement by 50%</span>.</li>
+<li>Managed <span class="token good">$200,000 annual budget</span> with 
+<span class="token good">ROI tracking</span>.</li>
+<li><span class="token bad">Elevated brand presence</span> across digital platforms.</li>
+</ul>
+</div>
 
-];
+<div class="role">
+<div class="role-header">
+<span>Digital Marketing Specialist — ABC Solutions</span>
+<span>Jun 2018 – Dec 2021</span>
+</div>
+<ul>
+<li>Executed <span class="token good">SEO audits</span> and 
+<span class="token good">SEM strategies</span> increasing 
+<span class="token good">organic traffic by 25%</span>.</li>
+<li>Managed <span class="token good">Google Ads campaigns</span> generating 
+<span class="token good">20% increase in qualified leads</span>.</li>
+<li><span class="token bad">Produced compelling content</span> for blogs and newsletters.</li>
+<li>Tracked <span class="token good">conversion metrics</span> using 
+<span class="token good">Google Analytics</span>.</li>
+</ul>
+</div>
+
+</div>
+
+<div class="section">
+<h2>EDUCATION</h2>
+<div class="role-header">
+<span>Bachelor of Marketing — University of Sydney</span>
+<span>Graduated 2018 | GPA: <span class="token good">3.7/4.0</span></span>
+</div>
+</div>
+
+<div class="section">
+<h2>SKILLS</h2>
+<ul>
+<li><span class="token good">Digital Marketing Strategy</span>, 
+<span class="token good">SEO & SEM</span>, 
+<span class="token good">Google Analytics</span>, 
+<span class="token good">SEMrush</span></li>
+<li><span class="token bad">Creative problem solving</span>, 
+<span class="token bad">Strong communication skills</span>, 
+<span class="token good">Data Analysis</span></li>
+</ul>
+</div>
+
+<div class="section">
+<h2>CERTIFICATIONS</h2>
+<ul>
+<li><span class="token good">Google Analytics Certified</span></li>
+<li><span class="token good">HubSpot Inbound Marketing Certification</span></li>
+<li><span class="token bad">Leadership Excellence Award</span></li>
+</ul>
+</div>
+`;
 
 /* ---------- Game Logic ---------- */
 
-let levelIndex=0;
-let score=0;
-let correct=0;
-let incorrect=0;
-let timer=null;
-let timeLeft=0;
-
-const paper=document.getElementById("paper");
-const results=document.getElementById("results");
-
-document.getElementById("btnStart").onclick=start;
-document.getElementById("btnFinish").onclick=finish;
-document.getElementById("btnNext").onclick=nextLevel;
-document.getElementById("btnRestart").onclick=()=>location.reload();
+let score=0, correct=0, incorrect=0;
+let timer, timeLeft=45;
 
 function start(){
-  const level=LEVELS[levelIndex];
-  paper.innerHTML=level.content;
+  document.getElementById("paper").innerHTML=resumeHTML;
+  document.getElementById("level").textContent="1";
   score=0; correct=0; incorrect=0;
-  results.style.display="none";
-  document.getElementById("btnFinish").disabled=false;
-  document.getElementById("btnNext").disabled=true;
-  document.getElementById("hudLevel").textContent=levelIndex+1;
-
+  document.getElementById("results").innerHTML="";
+  
   document.querySelectorAll(".token").forEach(t=>{
     t.onclick=()=>handleClick(t);
   });
 
-  timeLeft=level.time;
+  timeLeft=45;
   timer=setInterval(()=>{
     timeLeft--;
-    document.getElementById("hudTime").textContent=timeLeft+"s";
+    document.getElementById("time").textContent=timeLeft+"s";
     if(timeLeft<=0){ clearInterval(timer); finish(); }
   },1000);
 }
@@ -303,29 +292,18 @@ function handleClick(t){
 }
 
 function updateHUD(){
-  document.getElementById("hudScore").textContent=score;
-  document.getElementById("hudCorrect").textContent=correct;
-  document.getElementById("hudIncorrect").textContent=incorrect;
+  document.getElementById("score").textContent=score;
+  document.getElementById("correct").textContent=correct;
+  document.getElementById("incorrect").textContent=incorrect;
 }
 
 function finish(){
   clearInterval(timer);
-  results.style.display="block";
-  results.innerHTML=`
-  <strong>Time's up!</strong><br>
-  Final Score: ${score}<br>
-  Correct: ${correct}<br>
-  Incorrect: ${incorrect}<br><br>
-  ⚡ Remember: metrics beat vibes. Documentation beats charisma. Structure beats hype.
-  `;
-  document.getElementById("btnNext").disabled=false;
-}
-
-function nextLevel(){
-  if(levelIndex<LEVELS.length-1){
-    levelIndex++;
-    start();
-  }
+  document.getElementById("results").innerHTML=
+  "<strong>Time's up!</strong><br>Score: "+score+
+  "<br>Correct: "+correct+
+  "<br>Incorrect: "+incorrect+
+  "<br><br>⚡ Metrics > adjectives. Systems > vibes. Structure > hype.";
 }
 
 </script>
