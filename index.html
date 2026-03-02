@@ -22,17 +22,19 @@ body{
 .wrapper{display:flex;height:100vh;}
 
 .sidebar{
-  width:380px;
+  width:390px;
   background:#fff;
   padding:20px;
   border-right:1px solid #ccc;
   overflow:auto;
+  box-sizing:border-box;
 }
 
 .resume{
   flex:1;
   padding:50px;
   overflow:auto;
+  box-sizing:border-box;
 }
 
 .paper{
@@ -45,25 +47,24 @@ body{
 
 h1{
   text-align:center;
-  margin-bottom:6px;
+  margin:0 0 6px 0;
   letter-spacing:1px;
 }
 
 .sub{
   text-align:center;
   font-size:14px;
-  margin-bottom:25px;
+  margin:0 0 25px 0;
+  line-height:1.35;
 }
 
-.section{
-  margin-top:32px;
-}
+.section{ margin-top:32px; }
 
 .section h2{
   font-size:16px;
   border-bottom:2px solid #000;
   padding-bottom:4px;
-  margin-bottom:12px;
+  margin:0 0 12px 0;
 }
 
 .role-header{
@@ -73,12 +74,8 @@ h1{
   margin-top:14px;
 }
 
-ul{
-  margin-top:6px;
-  margin-bottom:10px;
-}
-
-li{ margin-bottom:4px; }
+ul{ margin:6px 0 10px 18px; padding:0; }
+li{ margin:0 0 6px 0; line-height:1.35; }
 
 .token{
   cursor:pointer;
@@ -86,10 +83,10 @@ li{ margin-bottom:4px; }
   border-radius:4px;
 }
 
-.token.selected{background:var(--good);}
-.token.flash{background:var(--bad);}
-.token.correct-all{background:var(--good);}
-.token.missed{background:var(--missed);}
+.token.selected{ background:var(--good); }
+.token.flash{ background:var(--bad); }
+.token.correct-all{ background:var(--good); }
+.token.missed{ background:var(--missed); }
 
 button{
   padding:10px;
@@ -97,312 +94,672 @@ button{
   border-radius:6px;
   border:1px solid #aaa;
   cursor:pointer;
+  width:100%;
 }
 
 .small{
-  font-size:12px;
-  line-height:1.4;
+  font-size:12.5px;
+  line-height:1.45;
   margin-top:12px;
 }
+
+.hr{
+  height:1px;
+  background:#e5e5e5;
+  margin:12px 0;
+}
+.badge{
+  display:inline-block;
+  padding:2px 8px;
+  border:1px solid #ddd;
+  border-radius:999px;
+  font-size:12px;
+  margin-left:6px;
+}
+.muted{ color:#555; }
 </style>
 </head>
 <body>
 
 <div class="wrapper">
 
-<div class="sidebar">
-<h2>ATS Scan</h2>
+  <div class="sidebar">
+    <h2 style="margin:0 0 10px 0;">ATS Scan</h2>
 
-<div>
-Level: <span id="level">1</span><br>
-Time: <span id="time">45s</span><br>
-Score: <span id="score">0</span><br>
-Correct: <span id="correct">0</span><br>
-Incorrect: <span id="incorrect">0</span>
-</div>
+    <div class="small">
+      <div><b>Level:</b> <span id="level">1</span> <span class="badge" id="bandLevel">—</span></div>
+      <div><b>Time:</b> <span id="time">45s</span></div>
 
-<button onclick="start()">Start</button>
-<button onclick="finish()">Finish</button>
-<button onclick="nextLevel()">Next Level</button>
-<button onclick="location.reload()">Restart</button>
+      <div class="hr"></div>
 
-<div id="results" class="small"></div>
-</div>
+      <div><b>Level Score:</b> <span id="score">0</span></div>
+      <div><b>Level Correct:</b> <span id="correct">0</span></div>
+      <div><b>Level Incorrect:</b> <span id="incorrect">0</span></div>
+      <div><b>Level Coverage:</b> <span id="coverage">—</span></div>
+      <div><b>Level Accuracy:</b> <span id="accuracy">—</span></div>
 
-<div class="resume">
-<div class="paper" id="paper">
-<h1>ATS Optimization Simulator</h1>
-<p class="sub">45 seconds. Click measurable, structured, role-relevant language.</p>
-</div>
-</div>
+      <div class="hr"></div>
+
+      <div><b>Cumulative Score:</b> <span id="cumScore">0</span> <span class="badge" id="bandCourse">—</span></div>
+      <div><b>Cumulative Correct:</b> <span id="cumCorrect">0</span></div>
+      <div><b>Cumulative Incorrect:</b> <span id="cumIncorrect">0</span></div>
+    </div>
+
+    <button onclick="start()">Start</button>
+    <button onclick="finish()">Finish</button>
+    <button onclick="nextLevel()">Next Level</button>
+    <button onclick="location.reload()">Restart</button>
+
+    <div id="results" class="small"></div>
+  </div>
+
+  <div class="resume">
+    <div class="paper" id="paper">
+      <h1>ATS Optimization Simulator</h1>
+      <p class="sub">45 seconds. Click only measurable, structured, role-relevant language. You’ll see the corrected resume after finishing.</p>
+    </div>
+  </div>
 
 </div>
 
 <script>
-
-/* AUDIO */
-const ctx=new (window.AudioContext||window.webkitAudioContext)();
+/* =========================
+   AUDIO (consistent buzz)
+========================= */
+const ctx = new (window.AudioContext||window.webkitAudioContext)();
 function buzz(){
-  const o=ctx.createOscillator();
-  const g=ctx.createGain();
-  o.type="square";o.frequency.value=170;g.gain.value=.12;
-  o.connect(g);g.connect(ctx.destination);
-  o.start();o.stop(ctx.currentTime+.2);
+  try{
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    o.type="square"; o.frequency.value=170; g.gain.value=.12;
+    o.connect(g); g.connect(ctx.destination);
+    o.start(); o.stop(ctx.currentTime+.2);
+  }catch(e){}
 }
 
-/* LEVEL DATA */
-
-const LEVELS=[
-
-/* LEVEL 1 — Journalism */
-
-{
-html:`
-<h1>SOPHIA MARTINEZ</h1>
-<div class="sub">
-Multimedia Journalism | Video Production | Data Reporting<br>
-Boston, MA | sophia@email.com
-</div>
-
-<div class="section">
-<h2>EDUCATION</h2>
-B.A. Journalism — Northeastern University<br>
-GPA: <span class="token good" data-type="credential">3.8/4.0</span><br>
-Relevant Coursework: <span class="token good" data-type="skill">Media Law</span>, 
-<span class="token good" data-type="skill">Broadcast Production</span>, 
-<span class="token bad" data-type="soft">Creative Writing Excellence</span>
-</div>
-
-<div class="section">
-<h2>INTERNSHIPS</h2>
-
-<div class="role-header">
-<span>Multimedia Intern — Boston Globe</span>
-<span>Summer 2023</span>
-</div>
-<ul>
-<li>Produced <span class="token good" data-type="deliverable">12 multimedia news packages</span> for digital platforms.</li>
-<li><span class="token bad" data-type="prestige">Elevated storytelling impact</span> through creative framing.</li>
-<li>Analyzed <span class="token good" data-type="metric">audience retention metrics</span> to refine content.</li>
-<li>Edited footage in <span class="token good" data-type="tool">Adobe Premiere Pro</span>.</li>
-<li>Served as <span class="token bad" data-type="prestige">voice of the newsroom</span>.</li>
-</ul>
-
-<div class="role-header">
-<span>Digital Media Intern — WBUR</span>
-<span>Spring 2023</span>
-</div>
-<ul>
-<li>Managed <span class="token good" data-type="system">content publishing calendar</span>.</li>
-<li>Improved <span class="token good" data-type="metric">engagement by 18%</span>.</li>
-<li>Supported <span class="token bad" data-type="vague">creative initiatives</span> across departments.</li>
-<li>Utilized <span class="token good" data-type="tool">CMS analytics dashboard</span>.</li>
-</ul>
-</div>
-
-<div class="section">
-<h2>CAMPUS EXPERIENCE</h2>
-<ul>
-<li>Led <span class="token good" data-type="leadership">editorial team of 15</span> as Editor-in-Chief.</li>
-<li>Published <span class="token good" data-type="metric">30+ investigative articles</span>.</li>
-<li>Recognized as <span class="token bad" data-type="soft">campus inspiration</span>.</li>
-</ul>
-</div>
-`
-},
-
-/* LEVEL 2 — Programmer */
-
-{
-html:`
-<h1>ETHAN KIM</h1>
-<div class="sub">
-Computer Science | Backend Development | Systems Programming<br>
-Seattle, WA | ethan@email.com
-</div>
-
-<div class="section">
-<h2>EDUCATION</h2>
-B.S. Computer Science — University of Washington<br>
-GPA: <span class="token good" data-type="credential">3.6/4.0</span><br>
-Relevant Coursework: <span class="token good" data-type="skill">Algorithms</span>, 
-<span class="token good" data-type="skill">Operating Systems</span>, 
-<span class="token bad" data-type="subtle">Innovative Problem Design</span>
-</div>
-
-<div class="section">
-<h2>INTERNSHIPS</h2>
-
-<div class="role-header">
-<span>Software Engineering Intern — Microsoft</span>
-<span>Summer 2023</span>
-</div>
-<ul>
-<li>Built <span class="token good" data-type="system">RESTful APIs in Python</span>.</li>
-<li>Reduced <span class="token good" data-type="metric">query latency by 32%</span>.</li>
-<li>Enhanced <span class="token bad" data-type="subtle">user experience pathways</span>.</li>
-<li>Implemented <span class="token good" data-type="tool">unit tests using pytest</span>.</li>
-<li>Collaborated in <span class="token bad" data-type="soft">high-energy agile environment</span>.</li>
-</ul>
-
-<div class="role-header">
-<span>Backend Developer Intern — Startup XYZ</span>
-<span>2022</span>
-</div>
-<ul>
-<li>Designed <span class="token good" data-type="system">PostgreSQL database schema</span>.</li>
-<li>Improved <span class="token good" data-type="metric">uptime to 99.8%</span>.</li>
-<li>Supported <span class="token bad" data-type="vague">strategic engineering initiatives</span>.</li>
-<li>Containerized services using <span class="token good" data-type="tool">Docker</span>.</li>
-</ul>
-</div>
-`
-},
-
-/* LEVEL 3 — Sports Management */
-
-{
-html:`
-<h1>JORDAN WALKER</h1>
-<div class="sub">
-Sports Management | Event Operations | Sponsorship Analytics<br>
-Chicago, IL | jordan@email.com
-</div>
-
-<div class="section">
-<h2>EDUCATION</h2>
-B.S. Sports Management — University of Illinois<br>
-GPA: <span class="token good" data-type="credential">3.5/4.0</span>
-</div>
-
-<div class="section">
-<h2>PROFESSIONAL EXPERIENCE</h2>
-
-<div class="role-header">
-<span>Operations Intern — Chicago Bulls</span>
-<span>Jan–Jun 2023</span>
-</div>
-<ul>
-<li>Coordinated logistics for <span class="token good" data-type="metric">20,000+ attendees</span>.</li>
-<li>Reduced <span class="token good" data-type="metric">event setup time by 15%</span>.</li>
-<li>Delivered <span class="token bad" data-type="prestige">unforgettable fan experiences</span>.</li>
-<li>Tracked <span class="token good" data-type="reporting">sponsorship ROI metrics</span>.</li>
-<li>Elevated <span class="token bad" data-type="subtle">stakeholder synergy alignment</span>.</li>
-</ul>
-
-<div class="role-header">
-<span>Marketing Intern — NCAA Regional Office</span>
-<span>2022</span>
-</div>
-<ul>
-<li>Increased <span class="token good" data-type="metric">social engagement by 22%</span>.</li>
-<li>Utilized <span class="token good" data-type="tool">CRM database for sponsor tracking</span>.</li>
-<li>Supported <span class="token bad" data-type="vague">high-profile initiatives</span>.</li>
-<li>Managed <span class="token good" data-type="budget">$10,000 travel budget</span>.</li>
-</ul>
-</div>
-`
+/* =========================
+   TOKEN HELPERS (keeps structure clean)
+========================= */
+function G(text, type, fix){
+  // good token: explanation shown if missed
+  return `<span class="token good" data-kind="good" data-type="${esc(type)}" data-fix="${esc(fix||"")}">${esc(text)}</span>`;
+}
+function B(text, type, why, fix){
+  // bad token: explanation shown if clicked
+  return `<span class="token bad" data-kind="bad" data-type="${esc(type)}" data-why="${esc(why||"")}" data-fix="${esc(fix||"")}">${esc(text)}</span>`;
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[ch]));
 }
 
+/* =========================
+   LEVEL RESUMES (full-page feel preserved)
+   - Correct/incorrect tokens are SCRAMBLED within bullets
+   - Level 3: very subtle decoys + higher density
+========================= */
+const LEVELS = [
+  // LEVEL 1 — Multimedia Journalism (multiple internships)
+  {
+    name: "Student Multimedia Journalist",
+    html: () => `
+      <h1>SOPHIA MARTINEZ</h1>
+      <div class="sub">
+        Multimedia Journalism | Video Production | Digital Analytics<br>
+        Boston, MA • sophia@email.com • portfolio: sophiamartinez.media
+      </div>
+
+      <div class="section">
+        <h2>EDUCATION</h2>
+        <div class="role-header">
+          <span>Northeastern University — B.A. Journalism (Major)</span>
+          <span>Expected May 2026</span>
+        </div>
+        <div class="muted">
+          GPA: ${G("3.8/4.0","credential","Keep GPA only if strong; format as X.X/4.0")} • Minor: ${G("Digital Media Studies","credential","Use exact program name")} • Coursework: ${G("Media Law","skill","Relevant to newsroom/ethics roles")}, ${G("Broadcast Production","skill","Signals production pipeline familiarity")}, ${B("Creative Writing Excellence","soft-decoy","Sounds positive but not a job-mapped competency.","Replace with a tool/method (e.g., AP Style, FOIA requests, audio editing).")}
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>INTERNSHIP EXPERIENCE</h2>
+
+        <div class="role-header">
+          <span>Multimedia Reporting Intern — Boston Globe</span>
+          <span>Jun–Aug 2024</span>
+        </div>
+        <ul>
+          <li>
+            Produced ${G("12 multimedia news packages","deliverable","Quantified outputs are ATS-readable")} and ${B("crafted compelling narratives","prestige","Content praise without measurable scope.","Add volume, beat, format, or engagement metric.")} for digital and social.
+          </li>
+          <li>
+            Edited video in ${G("Adobe Premiere Pro","tool","Specific tool keyword")} and ${G("Audition","tool","Audio tool keyword")}; ${B("made content pop","vague","Non-specific improvement claim.","State what you changed and the outcome (e.g., retention, completion rate).")}
+          </li>
+          <li>
+            Tracked ${G("audience retention metrics","metric","Metrics + noun = strong")} and improved ${G("average watch time by 18%","metric","Clear KPI with % change")} through headline and thumbnail iteration.
+          </li>
+          <li>
+            Built a repeatable ${G("production checklist workflow","system","Process language maps to operations")}; ${B("fast learner","soft-decoy","Trait language; ATS can’t verify.","Replace with trained-on tool/process and output.")}
+          </li>
+        </ul>
+
+        <div class="role-header">
+          <span>Digital Media Intern — WBUR</span>
+          <span>Jan–Apr 2024</span>
+        </div>
+        <ul>
+          <li>
+            Maintained ${G("content publishing calendar","system","Signals workflow ownership")} in CMS; ${B("supported high-impact initiatives","vague","Undefined work product.","Name the asset: posts, newsletters, clips, pages.")}.
+          </li>
+          <li>
+            Used ${G("CMS analytics dashboard","tool","ATS keyword")} to report ${G("weekly engagement trends","deliverable","Reporting output is concrete")}; ${B("elevated brand presence","prestige","No defined measure.","Add metric: followers, CTR, open rate, referrals.")}.
+          </li>
+          <li>
+            Applied ${G("AP Style","skill","Industry-standard")} and ${G("fact-checking protocol","method","Method keyword")}; ${B("people person","soft-decoy","Trait; not job requirement language.","Replace with stakeholder comms deliverable (briefs, interview notes).")}
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>CAMPUS EXPERIENCE</h2>
+        <div class="role-header">
+          <span>Editor-in-Chief — Student Newspaper</span>
+          <span>2023–Present</span>
+        </div>
+        <ul>
+          <li>
+            Led ${G("editorial team of 15","leadership","Scope + team size")} and published ${G("30+ reported features","deliverable","Quantified output")}; ${B("voice of the campus","prestige","Prestige without task.","Replace with beats, cadence, workflow, and standards.")}.
+          </li>
+          <li>
+            Managed ${G("$8,000 annual operating budget","budget","Budget is concrete")} and created ${G("assignment + copy-edit workflow","system","Process signals")}; ${B("campus inspiration","soft-decoy","Non-verifiable.","Replace with KPI: deadlines met, error rate, publication cadence.")}.
+          </li>
+          <li>
+            Coordinated ${G("source interviews and transcripts","method","Method keyword")} and maintained ${G("version-controlled story drafts","system","Structured documentation")} (Google Drive).
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>SKILLS</h2>
+        <div class="muted">
+          ${G("Adobe Premiere Pro","tool","Tool keyword")} • ${G("Adobe Audition","tool","Tool keyword")} • ${G("Photoshop","tool","Tool keyword")}
+          • ${G("SEO headlines","method","Method phrase")} • ${G("Google Analytics (GA4) basic reporting","tool","Specific platform")}
+          • ${B("excellent communicator","soft-decoy","Trait, not competency evidence.","Replace with deliverable: interview briefs, stakeholder reports.")}
+        </div>
+      </div>
+    `
+  },
+
+  // LEVEL 2 — Student Programmer (internships)
+  {
+    name: "Student Programmer",
+    html: () => `
+      <h1>ETHAN KIM</h1>
+      <div class="sub">
+        Computer Science | Backend Development | Systems & Data<br>
+        Seattle, WA • ethan@email.com • GitHub: github.com/ethankim
+      </div>
+
+      <div class="section">
+        <h2>EDUCATION</h2>
+        <div class="role-header">
+          <span>University of Washington — B.S. Computer Science (Major)</span>
+          <span>Expected Jun 2026</span>
+        </div>
+        <div class="muted">
+          GPA: ${G("3.6/4.0","credential","Strong academic signal when relevant")}
+          • Coursework: ${G("Algorithms","skill","Core CS keyword")}, ${G("Operating Systems","skill","Core CS keyword")}, ${G("Database Systems","skill","Core CS keyword")},
+          ${B("Innovative Problem Design","subtle-decoy","Academic-sounding but not a recognized skill tag.","Replace with specific: complexity analysis, concurrency, indexing.")}
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>INTERNSHIP EXPERIENCE</h2>
+
+        <div class="role-header">
+          <span>Software Engineering Intern — Microsoft</span>
+          <span>Jun–Aug 2024</span>
+        </div>
+        <ul>
+          <li>
+            Built ${G("RESTful APIs in Python","system","Specific architecture + language")} and reduced ${G("query latency by 32%","metric","Clear KPI")}; ${B("enhanced user journey touchpoints","subtle-decoy","Sounds technical but no defined system change.","Specify endpoint, cache, index, or query plan change.")}.
+          </li>
+          <li>
+            Implemented ${G("unit tests with pytest","tool","Testing keyword")} and ${G("CI checks","system","Pipeline keyword")}; ${B("high-energy agile environment","soft-decoy","Workplace vibe, not skill.","Replace with ceremonies + artifacts: sprint planning, tickets, retros.")}.
+          </li>
+          <li>
+            Wrote ${G("API documentation","deliverable","Deliverable keyword")} and created ${G("monitoring alerts","system","Ops signal")}; ${B("strategic thought leadership","prestige","No job-mapped output.","Replace with incidents prevented, MTTR, uptime.")}.
+          </li>
+        </ul>
+
+        <div class="role-header">
+          <span>Backend Developer Intern — Startup XYZ</span>
+          <span>May–Aug 2023</span>
+        </div>
+        <ul>
+          <li>
+            Designed ${G("PostgreSQL schema","system","Concrete technology")} and improved ${G("uptime to 99.8%","metric","Ops KPI")}; ${B("drove alignment across stakeholders","vague","No artifact described.","Name: specs, tickets, runbooks, SLAs.")}.
+          </li>
+          <li>
+            Containerized services with ${G("Docker","tool","Tool keyword")} and deployed via ${G("GitHub Actions","tool","CI/CD keyword")}; ${B("optimized synergy workflows","prestige","Buzzwordy.","Describe pipeline steps or deployment cadence.")}.
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>PROJECTS</h2>
+        <div class="role-header">
+          <span>Campus Events Platform (Full-Stack)</span>
+          <span>2024</span>
+        </div>
+        <ul>
+          <li>
+            Built ${G("React frontend","tool","Tool keyword")} + ${G("Node/Express API","tool","Tool keyword")}; served ${G("2,000+ active users","metric","Scale metric")}; ${B("delivered a seamless experience","vague","No measurable attribute.","Add performance, error rate, time saved.")}.
+          </li>
+          <li>
+            Implemented ${G("role-based access control","method","Security method keyword")} and ${G("input validation","method","Security method keyword")}; ${B("future-proof architecture","prestige","Unverifiable claim.","Replace with patterns: modularization, tests, docs.")}.
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>CAMPUS EXPERIENCE</h2>
+        <ul>
+          <li>
+            Teaching Assistant: ${G("graded 120+ assignments","metric","Quantified workload")} and maintained ${G("rubric-based feedback","system","Process keyword")}; ${B("beloved mentor","soft-decoy","Trait, not deliverable.","Replace with measurable support outcomes.")}.
+          </li>
+          <li>
+            Hackathon Team Lead: shipped ${G("MVP in 24 hours","metric","Time constraint metric")} and documented ${G("requirements + user stories","deliverable","PM artifacts")}; ${B("visionary leader","prestige","No scope.","Replace with team size, deliverables, results.")}.
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>SKILLS</h2>
+        <div class="muted">
+          ${G("Python","tool","Language keyword")} • ${G("JavaScript","tool","Language keyword")} • ${G("PostgreSQL","tool","Database keyword")}
+          • ${G("Docker","tool","Tool keyword")} • ${G("Git","tool","Tool keyword")}
+          • ${B("strong work ethic","soft-decoy","Trait-only.","Replace with evidence: throughput, tests, incidents resolved.")}
+        </div>
+      </div>
+    `
+  },
+
+  // LEVEL 3 — Sports Management (really hard; subtle decoys)
+  {
+    name: "Sports Management (Hard Mode)",
+    html: () => `
+      <h1>JORDAN WALKER</h1>
+      <div class="sub">
+        Sports Management | Event Operations | Sponsorship Analytics<br>
+        Chicago, IL • jordan@email.com • LinkedIn: linkedin.com/in/jordanwalker
+      </div>
+
+      <div class="section">
+        <h2>EDUCATION</h2>
+        <div class="role-header">
+          <span>University of Illinois — B.S. Sports Management (Major)</span>
+          <span>May 2024</span>
+        </div>
+        <div class="muted">
+          GPA: ${G("3.5/4.0","credential","GPA is optional; include when strong")}
+          • Coursework: ${G("Sport Facility Operations","skill","Directly relevant")},
+          ${G("Sport Finance","skill","Keyword for budgets/ROI")},
+          ${B("Leadership Excellence","prestige","Award/phrase without selection criteria.","Prefer credential/cert or measurable role impact.")}
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>PROFESSIONAL EXPERIENCE</h2>
+
+        <div class="role-header">
+          <span>Operations Intern (Full-Time, 6 months) — Major League Organization</span>
+          <span>Jan–Jun 2024</span>
+        </div>
+        <ul>
+          <li>
+            Coordinated ${G("game-day logistics for 20,000+ attendees","metric","Scale metric is strong")} and maintained ${G("run-of-show documentation","system","Artifact keyword")},
+            while ${B("enhancing fan engagement touchpoints","subtle-decoy","Feels operational, but no defined artifact or metric.","Name a deliverable: signage plan, staffing grid, queue model; add KPI.")}.
+          </li>
+          <li>
+            Reduced ${G("setup time by 15%","metric","Clear KPI")} using ${G("standardized checklists","system","Repeatable process")} and ${B("operational alignment initiatives","subtle-decoy","Initiatives without outputs.","Specify SOPs, schedules, staffing matrices, audits.")}.
+          </li>
+          <li>
+            Built ${G("staffing schedule for 120+ event staff","metric","Scale/volume")} and reconciled ${G("vendor invoices","system","Finance ops keyword")},
+            but also ${B("served as a trusted culture catalyst","soft-decoy","Trait framing.","Replace with retention, training completion, incident reduction.")}.
+          </li>
+          <li>
+            Tracked ${G("sponsorship deliverables","deliverable","Contract deliverables keyword")} and reported ${G("ROI metrics","reporting","Analytics keyword")},
+            alongside ${B("strategic partnership storytelling","subtle-decoy","Sounds marketing-ish but lacks measurable scope.","Name report cadence, KPIs, partner activation outcomes.")}.
+          </li>
+          <li>
+            Managed ${G("incident escalation log","system","Risk/compliance artifact")} and improved ${G("post-event closeout cycle by 2 days","metric","Operational cycle metric")},
+            despite ${B("driving stakeholder alignment","vague","No artifact described.","Name: briefs, meeting notes, SLAs, action logs.")}.
+          </li>
+        </ul>
+
+        <div class="role-header">
+          <span>Marketing & Sponsorship Intern — NCAA Regional Office</span>
+          <span>May–Aug 2023</span>
+        </div>
+        <ul>
+          <li>
+            Increased ${G("social engagement by 22%","metric","Quantified result")} using ${G("content calendar","system","Artifact")} and ${B("high-impact narratives","prestige","No defined measure.","Add CTR, conversions, reach, engagement breakdown.")}.
+          </li>
+          <li>
+            Maintained ${G("CRM sponsor tracking","tool","Tool/system")} and updated ${G("activation status dashboards","deliverable","Deliverable keyword")},
+            while ${B("elevating brand presence","prestige","No KPI.","Add sponsor renewals, impressions, leads.")}.
+          </li>
+          <li>
+            Supported ${G("contract deliverable checklist","system","Compliance artifact")} and ${B("executive-ready strategy support","subtle-decoy","Sounds real, but lacks output.","Name deck sections, metrics included, decisions supported.")}.
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>CAMPUS EXPERIENCE</h2>
+        <div class="role-header">
+          <span>Athletics Operations Student Assistant</span>
+          <span>2022–2024</span>
+        </div>
+        <ul>
+          <li>
+            Coordinated ${G("travel logistics for 6 away games","deliverable","Concrete ops output")} and tracked ${G("$10,000 travel budget","budget","Budget keyword")},
+            but also ${B("inspirational locker-room leader","soft-decoy","Trait-only.","Replace with outcomes: schedules, inventory, compliance, reports.")}.
+          </li>
+          <li>
+            Maintained ${G("equipment inventory spreadsheet","tool","Tool keyword")} and reduced ${G("missing-item incidents by 20%","metric","Operational KPI")},
+            alongside ${B("champion of team culture","soft-decoy","Not ATS-readable.","Replace with training completion, incident reduction, compliance rates.")}.
+          </li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>SKILLS</h2>
+        <div class="muted">
+          ${G("event operations","skill","Direct skill")} • ${G("vendor management","skill","Ops keyword")}
+          • ${G("budget tracking","skill","Finance keyword")} • ${G("CRM data entry","skill","Systems keyword")}
+          • ${G("Excel (pivot tables)","tool","Concrete tool")}
+          • ${B("relationship builder","soft-decoy","Trait-only.","Replace with stakeholder artifacts, service metrics, renewal rates.")}
+          • ${B("cross-functional alignment","subtle-decoy","Often empty unless paired with artifact.","Attach to deliverable: action log, RACI, schedule, dashboard.")}
+        </div>
+      </div>
+    `
+  }
 ];
 
-/* GAME LOGIC */
+/* =========================
+   GAME STATE (architecture preserved)
+========================= */
+let levelIndex = 0;
 
-let level=0;
-let score=0,correct=0,incorrect=0;
-let time=45,timer;
-let wrongClicks=[];
-let missed=[];
+let score = 0, correct = 0, incorrect = 0;
+let timer = null, timeLeft = 45;
+
+let wrongClicks = [];   // {text, type, why, fix}
+let missed = [];        // {text, type, fix}
+
+let totalGoodThisLevel = 0;
+let clickedGoodThisLevel = 0;
+
+// cumulative
+let cumScore = 0, cumCorrect = 0, cumIncorrect = 0;
+// guard to prevent double-adding to cumulative if Finish clicked twice
+let levelFinalized = false;
 
 function start(){
-  score=0;correct=0;incorrect=0;wrongClicks=[];missed=[];
-  document.getElementById("paper").innerHTML=LEVELS[level].html;
-  document.getElementById("level").textContent=level+1;
-  document.getElementById("results").innerHTML="";
+  // per-level reset only (cumulative persists)
+  score = 0; correct = 0; incorrect = 0;
+  wrongClicks = []; missed = [];
+  clickedGoodThisLevel = 0;
+  totalGoodThisLevel = 0;
+  levelFinalized = false;
 
-  document.querySelectorAll(".token").forEach(t=>{
-    t.onclick=()=>clickToken(t);
+  // render resume (full-size feel preserved)
+  document.getElementById("paper").innerHTML = LEVELS[levelIndex].html();
+  document.getElementById("level").textContent = String(levelIndex + 1);
+  document.getElementById("results").innerHTML = "";
+
+  // wire tokens
+  const tokens = document.querySelectorAll(".token");
+  tokens.forEach(t => {
+    t.onclick = () => clickToken(t);
   });
 
-  time=45;
-  document.getElementById("time").textContent=time+"s";
-  timer=setInterval(()=>{
-    time--;
-    document.getElementById("time").textContent=time+"s";
-    if(time<=0){clearInterval(timer);finish();}
-  },1000);
+  // count total good tokens for coverage
+  totalGoodThisLevel = Array.from(tokens).filter(t => t.dataset.kind === "good").length;
+
+  // reset HUD
+  updateHUD();
+
+  // timer
+  clearInterval(timer);
+  timeLeft = 45;
+  document.getElementById("time").textContent = timeLeft + "s";
+  timer = setInterval(() => {
+    timeLeft--;
+    if(timeLeft < 0) timeLeft = 0;
+    document.getElementById("time").textContent = timeLeft + "s";
+    if(timeLeft <= 0){
+      clearInterval(timer);
+      finish();
+    }
+  }, 1000);
 }
 
 function clickToken(t){
-  if(t.classList.contains("selected"))return;
+  if(levelFinalized) return; // disable after finish
+  if(t.classList.contains("selected")) return;
 
-  if(t.classList.contains("good")){
-    score+=5;correct++;
+  const kind = t.dataset.kind;
+  const type = t.dataset.type || "uncategorized";
+
+  if(kind === "good"){
+    score += 5;
+    correct += 1;
+    clickedGoodThisLevel += 1;
     t.classList.add("selected");
   }else{
-    score-=3;incorrect++;
-    wrongClicks.push({text:t.innerText,type:t.dataset.type});
+    score -= 3;
+    incorrect += 1;
+    const why = t.dataset.why || "";
+    const fix = t.dataset.fix || "";
+    wrongClicks.push({ text: t.innerText, type, why, fix });
     t.classList.add("flash");
     buzz();
-    setTimeout(()=>t.classList.remove("flash"),250);
+    setTimeout(() => t.classList.remove("flash"), 250);
   }
   updateHUD();
 }
 
-function updateHUD(){
-  document.getElementById("score").textContent=score;
-  document.getElementById("correct").textContent=correct;
-  document.getElementById("incorrect").textContent=incorrect;
-}
-
 function finish(){
+  if(levelFinalized) return;
+  levelFinalized = true;
   clearInterval(timer);
 
-  document.querySelectorAll(".token").forEach(t=>{
-    if(t.classList.contains("good")){
-      if(!t.classList.contains("selected")){
-        missed.push(t.innerText);
-        t.classList.add("missed");
-      }
+  // Reveal: mark all good as green; missed as blue
+  const tokens = document.querySelectorAll(".token");
+  tokens.forEach(t => {
+    if(t.dataset.kind === "good"){
+      const wasSelected = t.classList.contains("selected");
       t.classList.add("correct-all");
+      if(!wasSelected){
+        t.classList.add("missed");
+        missed.push({
+          text: t.innerText,
+          type: t.dataset.type || "keyword",
+          fix: t.dataset.fix || ""
+        });
+      }
     }
   });
 
-  let explanation="<strong>Detailed Feedback:</strong><br>";
+  // Add to cumulative once
+  cumScore += score;
+  cumCorrect += correct;
+  cumIncorrect += incorrect;
 
-  wrongClicks.forEach(w=>{
-    explanation+="❌ <b>"+w.text+"</b> — ";
-    if(w.type==="soft") explanation+="Soft skill/personality descriptor. ATS systems do not index traits.";
-    else if(w.type==="prestige") explanation+="Prestige language without measurable scope.";
-    else if(w.type==="vague") explanation+="Vague responsibility without defined output.";
-    else if(w.type==="subtle") explanation+="Professional-sounding but lacks quantifiable result or system.";
-    explanation+="<br>";
-  });
+  // Update HUD (coverage/accuracy/bands)
+  updateHUD(true);
 
-  if(missed.length){
-    explanation+="<br><strong>Missed High-Value Language:</strong><br>";
-    missed.forEach(m=>{
-      explanation+="🔵 "+m+" — Structured, measurable, tool-based, or system-driven language that ATS prioritizes.<br>";
-    });
-  }
+  // Build explanations
+  const coverage = computeCoverage();
+  const accuracy = computeAccuracy();
+  const bandLevel = classify(score, accuracy, coverage, levelIndex);
 
-  explanation+="<br><em>Green = Correct. Blue = Missed. Red = Incorrect.</em>";
+  const wrongBlock = buildWrongBlock();
+  const missedBlock = buildMissedBlock();
 
-  document.getElementById("results").innerHTML=
-  "<strong>Time's up!</strong><br>"+
-  "Score: "+score+
-  "<br>Correct: "+correct+
-  "<br>Incorrect: "+incorrect+
-  "<br><br>"+explanation;
+  const endMsg = (levelIndex === LEVELS.length - 1)
+    ? `<div class="hr"></div><b>Course complete.</b> Final classification: <b>${classifyCourse()}</b>.`
+    : "";
+
+  document.getElementById("results").innerHTML = `
+    <b>Time’s up!</b><br>
+    <b>Level Score:</b> ${score}<br>
+    <b>Coverage:</b> ${coverage}% • <b>Accuracy:</b> ${accuracy === null ? "—" : accuracy + "%"}<br>
+    <b>Level Band:</b> ${bandLevel}<br>
+    <div class="hr"></div>
+    <b>Review key:</b> Green = correct ATS language. Blue = missed ATS language. Red buzz = decoy click.<br>
+    ${wrongBlock}
+    ${missedBlock}
+    ${endMsg}
+  `;
 }
 
 function nextLevel(){
-  if(level<LEVELS.length-1){
-    level++;
-    start();
+  if(levelIndex >= LEVELS.length - 1){
+    // already last level; do nothing
+    return;
   }
+  levelIndex += 1;
+  start();
 }
 
+/* =========================
+   Explanations
+========================= */
+function labelType(type){
+  const map = {
+    "soft-decoy":"Soft skill / trait",
+    "soft":"Soft skill / trait",
+    "prestige":"Prestige inflation",
+    "vague":"Vague responsibility",
+    "subtle-decoy":"Subtle decoy",
+    "subtle":"Subtle decoy",
+    "tool":"Tool / platform",
+    "system":"System / process",
+    "method":"Method / protocol",
+    "metric":"Metric / outcome",
+    "deliverable":"Deliverable / output",
+    "credential":"Credential / GPA",
+    "budget":"Budget / finance",
+    "leadership":"Leadership with scope",
+    "skill":"Skill keyword",
+    "reporting":"Reporting / analytics",
+    "experience":"Experience qualifier",
+    "project":"Project"
+  };
+  return map[type] || type;
+}
+
+function buildWrongBlock(){
+  if(wrongClicks.length === 0){
+    return `<b>Incorrect clicks:</b> None. Good discipline under time pressure.<br>`;
+  }
+
+  // show up to 12 wrong clicks (dense enough but not infinite)
+  const items = wrongClicks.slice(0, 12).map(w => {
+    const why = w.why ? ` ${esc(why)}` : "";
+    const fix = w.fix ? ` <span class="muted">Fix:</span> ${esc(w.fix)}` : "";
+    return `• <b>${esc(w.text)}</b> <span class="muted">(${labelType(w.type)})</span> —${why}${fix}`;
+  }).join("<br>");
+
+  const more = wrongClicks.length > 12 ? `<br><span class="muted">(+${wrongClicks.length-12} more incorrect clicks not shown)</span>` : "";
+
+  return `<b>Incorrect clicks (why they’re weak):</b><br>${items}${more}<div class="hr"></div>`;
+}
+
+function buildMissedBlock(){
+  if(missed.length === 0){
+    return `<b>Missed correct phrases:</b> None. You captured all ATS-relevant tokens in this level.<br>`;
+  }
+
+  // prioritize: show up to 14 missed
+  const items = missed.slice(0, 14).map(m => {
+    const fix = m.fix ? ` <span class="muted">Keep because:</span> ${esc(m.fix)}` : "";
+    return `• <b>${esc(m.text)}</b> <span class="muted">(${labelType(m.type)})</span>.${fix}`;
+  }).join("<br>");
+
+  const more = missed.length > 14 ? `<br><span class="muted">(+${missed.length-14} more missed phrases not shown)</span>` : "";
+
+  return `<b>Missed correct phrases (what they signal to ATS):</b><br>${items}${more}`;
+}
+
+/* =========================
+   Coverage / Accuracy / Bands
+========================= */
+function computeCoverage(){
+  if(totalGoodThisLevel === 0) return 0;
+  const cov = Math.round((clickedGoodThisLevel / totalGoodThisLevel) * 100);
+  return cov;
+}
+function computeAccuracy(){
+  const totalClicks = correct + incorrect;
+  if(totalClicks === 0) return null;
+  return Math.round((correct / totalClicks) * 100);
+}
+
+function classify(levelScore, accuracy, coverage, idx){
+  // Slightly stricter expectations as levels increase.
+  const acc = (accuracy === null) ? 0 : accuracy;
+  const cov = coverage;
+
+  // Level scaling: Level 3 is harsh
+  const scale = idx === 2 ? 1.12 : (idx === 1 ? 1.05 : 1.0);
+  const effScore = Math.round(levelScore / scale);
+
+  // Bands: combine signal (accuracy) + breadth (coverage) + points
+  if(effScore >= 90 && acc >= 85 && cov >= 70) return "ATS Director";
+  if(effScore >= 65 && acc >= 75 && cov >= 60) return "ATS Analyst";
+  if(effScore >= 35 && (acc >= 65 || cov >= 50)) return "ATS Apprentice";
+  return "Needs Calibration";
+}
+
+function classifyCourse(){
+  // Course band based on cumulative performance
+  const totalClicks = cumCorrect + cumIncorrect;
+  const acc = totalClicks ? Math.round((cumCorrect / totalClicks) * 100) : 0;
+
+  // crude course coverage proxy: average of level coverages isn't stored; use acc + score.
+  // (We keep architecture simple: no extra storage objects.)
+  if(cumScore >= 210 && acc >= 82) return "ATS Director";
+  if(cumScore >= 140 && acc >= 72) return "ATS Analyst";
+  if(cumScore >= 80  && acc >= 62) return "ATS Apprentice";
+  return "Needs Calibration";
+}
+
+/* =========================
+   HUD Updates (preserve elements)
+========================= */
+function updateHUD(afterFinish=false){
+  document.getElementById("score").textContent = score;
+  document.getElementById("correct").textContent = correct;
+  document.getElementById("incorrect").textContent = incorrect;
+
+  const cov = computeCoverage();
+  const acc = computeAccuracy();
+  document.getElementById("coverage").textContent = afterFinish || (correct+incorrect>0) ? (cov + "%") : "—";
+  document.getElementById("accuracy").textContent = acc === null ? "—" : (acc + "%");
+
+  const bandLevel = classify(score, acc, cov, levelIndex);
+  document.getElementById("bandLevel").textContent = bandLevel;
+
+  document.getElementById("cumScore").textContent = cumScore;
+  document.getElementById("cumCorrect").textContent = cumCorrect;
+  document.getElementById("cumIncorrect").textContent = cumIncorrect;
+  document.getElementById("bandCourse").textContent = classifyCourse();
+}
 </script>
 
 </body>
