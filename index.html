@@ -6,11 +6,11 @@
 
 <style>
 :root{
-  --bg:#e9e9e9;
-  --paper:#fff;
+  --bg:#e6e6e6;
+  --paper:#ffffff;
   --good:#c8f7c5;
-  --missed:#cde9ff;
   --bad:#ffd6d6;
+  --missed:#cde9ff;
 }
 
 body{
@@ -25,37 +25,60 @@ body{
   width:380px;
   background:#fff;
   padding:20px;
-  border-right:1px solid #ddd;
+  border-right:1px solid #ccc;
   overflow:auto;
 }
 
-.resume{flex:1;padding:40px;overflow:auto;}
+.resume{
+  flex:1;
+  padding:50px;
+  overflow:auto;
+}
 
 .paper{
   width:900px;
   margin:auto;
   background:var(--paper);
-  padding:60px 70px;
-  box-shadow:0 0 30px rgba(0,0,0,.08);
+  padding:70px 80px;
+  box-shadow:0 0 35px rgba(0,0,0,.12);
 }
 
-h1{text-align:center;margin-bottom:6px;letter-spacing:1px;}
-.sub{text-align:center;font-size:14px;margin-bottom:20px;}
+h1{
+  text-align:center;
+  margin-bottom:6px;
+  letter-spacing:1px;
+}
 
-.section{margin-top:28px;}
+.sub{
+  text-align:center;
+  font-size:14px;
+  margin-bottom:25px;
+}
+
+.section{
+  margin-top:32px;
+}
+
 .section h2{
   font-size:16px;
   border-bottom:2px solid #000;
   padding-bottom:4px;
+  margin-bottom:12px;
 }
 
 .role-header{
   display:flex;
   justify-content:space-between;
   font-weight:bold;
+  margin-top:14px;
 }
 
-ul{margin-top:6px;}
+ul{
+  margin-top:6px;
+  margin-bottom:10px;
+}
+
+li{ margin-bottom:4px; }
 
 .token{
   cursor:pointer;
@@ -72,11 +95,15 @@ button{
   padding:10px;
   margin-top:10px;
   border-radius:6px;
-  border:1px solid #ccc;
+  border:1px solid #aaa;
   cursor:pointer;
 }
 
-.small{font-size:12px;margin-top:10px;line-height:1.4;}
+.small{
+  font-size:12px;
+  line-height:1.4;
+  margin-top:12px;
+}
 </style>
 </head>
 <body>
@@ -113,8 +140,7 @@ Incorrect: <span id="incorrect">0</span>
 
 <script>
 
-/* ---------------- AUDIO ---------------- */
-
+/* AUDIO */
 const ctx=new (window.AudioContext||window.webkitAudioContext)();
 function buzz(){
   const o=ctx.createOscillator();
@@ -124,19 +150,17 @@ function buzz(){
   o.start();o.stop(ctx.currentTime+.2);
 }
 
-/* ---------------- LEVEL DATA ---------------- */
+/* LEVEL DATA */
 
 const LEVELS=[
 
-/* ========================================================= */
-/* LEVEL 1 — STUDENT MULTIMEDIA JOURNALIST */
-/* ========================================================= */
+/* LEVEL 1 — Journalism */
 
 {
 html:`
 <h1>SOPHIA MARTINEZ</h1>
 <div class="sub">
-Multimedia Journalism | Video Production | Digital Storytelling<br>
+Multimedia Journalism | Video Production | Data Reporting<br>
 Boston, MA | sophia@email.com
 </div>
 
@@ -144,24 +168,24 @@ Boston, MA | sophia@email.com
 <h2>EDUCATION</h2>
 B.A. Journalism — Northeastern University<br>
 GPA: <span class="token good" data-type="credential">3.8/4.0</span><br>
-Relevant Coursework: <span class="token good" data-type="skill">Investigative Reporting</span>, 
+Relevant Coursework: <span class="token good" data-type="skill">Media Law</span>, 
 <span class="token good" data-type="skill">Broadcast Production</span>, 
-<span class="token good" data-type="skill">Media Law</span>
+<span class="token bad" data-type="soft">Creative Writing Excellence</span>
 </div>
 
 <div class="section">
-<h2>INTERNSHIP EXPERIENCE</h2>
+<h2>INTERNSHIPS</h2>
 
 <div class="role-header">
 <span>Multimedia Intern — Boston Globe</span>
 <span>Summer 2023</span>
 </div>
 <ul>
-<li><span class="token good" data-type="deliverable">Produced 12 multimedia news packages</span></li>
-<li><span class="token good" data-type="metric">Increased article engagement by 18%</span></li>
-<li><span class="token good" data-type="tool">Edited video content in Adobe Premiere Pro</span></li>
-<li><span class="token bad" data-type="prestige">Crafted compelling narratives</span></li>
-<li><span class="token bad" data-type="soft">Passionate storyteller</span></li>
+<li>Produced <span class="token good" data-type="deliverable">12 multimedia news packages</span> for digital platforms.</li>
+<li><span class="token bad" data-type="prestige">Elevated storytelling impact</span> through creative framing.</li>
+<li>Analyzed <span class="token good" data-type="metric">audience retention metrics</span> to refine content.</li>
+<li>Edited footage in <span class="token good" data-type="tool">Adobe Premiere Pro</span>.</li>
+<li>Served as <span class="token bad" data-type="prestige">voice of the newsroom</span>.</li>
 </ul>
 
 <div class="role-header">
@@ -169,37 +193,31 @@ Relevant Coursework: <span class="token good" data-type="skill">Investigative Re
 <span>Spring 2023</span>
 </div>
 <ul>
-<li><span class="token good" data-type="system">Managed content publishing schedule</span></li>
-<li><span class="token good" data-type="tool">Utilized CMS analytics dashboards</span></li>
-<li><span class="token good" data-type="metric">Tracked audience retention metrics</span></li>
-<li><span class="token bad" data-type="vague">Supported creative initiatives</span></li>
+<li>Managed <span class="token good" data-type="system">content publishing calendar</span>.</li>
+<li>Improved <span class="token good" data-type="metric">engagement by 18%</span>.</li>
+<li>Supported <span class="token bad" data-type="vague">creative initiatives</span> across departments.</li>
+<li>Utilized <span class="token good" data-type="tool">CMS analytics dashboard</span>.</li>
 </ul>
 </div>
 
 <div class="section">
 <h2>CAMPUS EXPERIENCE</h2>
-<div class="role-header">
-<span>Editor-in-Chief — Student Newspaper</span>
-<span>2022–Present</span>
-</div>
 <ul>
-<li><span class="token good" data-type="leadership">Led editorial team of 15</span></li>
-<li><span class="token good" data-type="metric">Published 30+ investigative features</span></li>
-<li><span class="token bad" data-type="prestige">Voice of the campus</span></li>
+<li>Led <span class="token good" data-type="leadership">editorial team of 15</span> as Editor-in-Chief.</li>
+<li>Published <span class="token good" data-type="metric">30+ investigative articles</span>.</li>
+<li>Recognized as <span class="token bad" data-type="soft">campus inspiration</span>.</li>
 </ul>
 </div>
 `
 },
 
-/* ========================================================= */
-/* LEVEL 2 — STUDENT PROGRAMMER */
-/* ========================================================= */
+/* LEVEL 2 — Programmer */
 
 {
 html:`
 <h1>ETHAN KIM</h1>
 <div class="sub">
-Computer Science | Software Engineering | Data Structures<br>
+Computer Science | Backend Development | Systems Programming<br>
 Seattle, WA | ethan@email.com
 </div>
 
@@ -209,22 +227,22 @@ B.S. Computer Science — University of Washington<br>
 GPA: <span class="token good" data-type="credential">3.6/4.0</span><br>
 Relevant Coursework: <span class="token good" data-type="skill">Algorithms</span>, 
 <span class="token good" data-type="skill">Operating Systems</span>, 
-<span class="token good" data-type="skill">Database Systems</span>
+<span class="token bad" data-type="subtle">Innovative Problem Design</span>
 </div>
 
 <div class="section">
-<h2>INTERNSHIP EXPERIENCE</h2>
+<h2>INTERNSHIPS</h2>
 
 <div class="role-header">
 <span>Software Engineering Intern — Microsoft</span>
 <span>Summer 2023</span>
 </div>
 <ul>
-<li><span class="token good" data-type="system">Built RESTful APIs in Python</span></li>
-<li><span class="token good" data-type="metric">Reduced query latency by 32%</span></li>
-<li><span class="token good" data-type="tool">Implemented unit testing in pytest</span></li>
-<li><span class="token bad" data-type="subtle">Enhanced user journey touchpoints</span></li>
-<li><span class="token bad" data-type="prestige">Innovative coding visionary</span></li>
+<li>Built <span class="token good" data-type="system">RESTful APIs in Python</span>.</li>
+<li>Reduced <span class="token good" data-type="metric">query latency by 32%</span>.</li>
+<li>Enhanced <span class="token bad" data-type="subtle">user experience pathways</span>.</li>
+<li>Implemented <span class="token good" data-type="tool">unit tests using pytest</span>.</li>
+<li>Collaborated in <span class="token bad" data-type="soft">high-energy agile environment</span>.</li>
 </ul>
 
 <div class="role-header">
@@ -232,27 +250,16 @@ Relevant Coursework: <span class="token good" data-type="skill">Algorithms</span
 <span>2022</span>
 </div>
 <ul>
-<li><span class="token good" data-type="system">Developed database schema in PostgreSQL</span></li>
-<li><span class="token good" data-type="metric">Improved system uptime to 99.8%</span></li>
-<li><span class="token good" data-type="tool">Deployed applications via Docker</span></li>
-<li><span class="token bad" data-type="vague">Supported high-impact initiatives</span></li>
-</ul>
-</div>
-
-<div class="section">
-<h2>CAMPUS PROJECTS</h2>
-<ul>
-<li><span class="token good" data-type="project">Built full-stack React application</span></li>
-<li><span class="token good" data-type="metric">Served 2,000+ active users</span></li>
-<li><span class="token bad" data-type="soft">Team-oriented collaborator</span></li>
+<li>Designed <span class="token good" data-type="system">PostgreSQL database schema</span>.</li>
+<li>Improved <span class="token good" data-type="metric">uptime to 99.8%</span>.</li>
+<li>Supported <span class="token bad" data-type="vague">strategic engineering initiatives</span>.</li>
+<li>Containerized services using <span class="token good" data-type="tool">Docker</span>.</li>
 </ul>
 </div>
 `
 },
 
-/* ========================================================= */
-/* LEVEL 3 — SPORTS MANAGEMENT PROFESSIONAL */
-/* ========================================================= */
+/* LEVEL 3 — Sports Management */
 
 {
 html:`
@@ -272,15 +279,15 @@ GPA: <span class="token good" data-type="credential">3.5/4.0</span>
 <h2>PROFESSIONAL EXPERIENCE</h2>
 
 <div class="role-header">
-<span>Operations Intern (Full-Time) — Chicago Bulls</span>
+<span>Operations Intern — Chicago Bulls</span>
 <span>Jan–Jun 2023</span>
 </div>
 <ul>
-<li><span class="token good" data-type="system">Coordinated game-day logistics for 20,000+ attendees</span></li>
-<li><span class="token good" data-type="metric">Reduced event setup time by 15%</span></li>
-<li><span class="token good" data-type="reporting">Tracked sponsorship ROI metrics</span></li>
-<li><span class="token bad" data-type="prestige">Delivered unforgettable fan experiences</span></li>
-<li><span class="token bad" data-type="subtle">Elevated stakeholder synergy</span></li>
+<li>Coordinated logistics for <span class="token good" data-type="metric">20,000+ attendees</span>.</li>
+<li>Reduced <span class="token good" data-type="metric">event setup time by 15%</span>.</li>
+<li>Delivered <span class="token bad" data-type="prestige">unforgettable fan experiences</span>.</li>
+<li>Tracked <span class="token good" data-type="reporting">sponsorship ROI metrics</span>.</li>
+<li>Elevated <span class="token bad" data-type="subtle">stakeholder synergy alignment</span>.</li>
 </ul>
 
 <div class="role-header">
@@ -288,18 +295,10 @@ GPA: <span class="token good" data-type="credential">3.5/4.0</span>
 <span>2022</span>
 </div>
 <ul>
-<li><span class="token good" data-type="metric">Increased social engagement by 22%</span></li>
-<li><span class="token good" data-type="tool">Utilized CRM database for sponsor tracking</span></li>
-<li><span class="token bad" data-type="vague">Assisted high-profile initiatives</span></li>
-</ul>
-</div>
-
-<div class="section">
-<h2>CAMPUS EXPERIENCE</h2>
-<ul>
-<li><span class="token good" data-type="leadership">Captain, Varsity Basketball Team</span></li>
-<li><span class="token good" data-type="metric">Managed $10,000 annual travel budget</span></li>
-<li><span class="token bad" data-type="soft">Inspirational locker-room leader</span></li>
+<li>Increased <span class="token good" data-type="metric">social engagement by 22%</span>.</li>
+<li>Utilized <span class="token good" data-type="tool">CRM database for sponsor tracking</span>.</li>
+<li>Supported <span class="token bad" data-type="vague">high-profile initiatives</span>.</li>
+<li>Managed <span class="token good" data-type="budget">$10,000 travel budget</span>.</li>
 </ul>
 </div>
 `
@@ -307,19 +306,19 @@ GPA: <span class="token good" data-type="credential">3.5/4.0</span>
 
 ];
 
-/* ---------------- GAME LOGIC ---------------- */
+/* GAME LOGIC */
 
 let level=0;
 let score=0,correct=0,incorrect=0;
-let timer,time=45;
+let time=45,timer;
 let wrongClicks=[];
 let missed=[];
 
 function start(){
   score=0;correct=0;incorrect=0;wrongClicks=[];missed=[];
-  document.getElementById("results").innerHTML="";
   document.getElementById("paper").innerHTML=LEVELS[level].html;
   document.getElementById("level").textContent=level+1;
+  document.getElementById("results").innerHTML="";
 
   document.querySelectorAll(".token").forEach(t=>{
     t.onclick=()=>clickToken(t);
@@ -369,21 +368,21 @@ function finish(){
     }
   });
 
-  let explanation="<strong>Detailed Analysis:</strong><br>";
+  let explanation="<strong>Detailed Feedback:</strong><br>";
 
   wrongClicks.forEach(w=>{
-    explanation+="<div>❌ <b>"+w.text+"</b> — ";
-    if(w.type==="soft") explanation+="Personality descriptor. ATS systems do not index character traits.";
-    else if(w.type==="prestige") explanation+="Prestige language without system, metric, or tool.";
-    else if(w.type==="vague") explanation+="Vague responsibility lacking defined output.";
-    else if(w.type==="subtle") explanation+="Professional phrasing that sounds technical but lacks measurable scope.";
-    explanation+="</div>";
+    explanation+="❌ <b>"+w.text+"</b> — ";
+    if(w.type==="soft") explanation+="Soft skill/personality descriptor. ATS systems do not index traits.";
+    else if(w.type==="prestige") explanation+="Prestige language without measurable scope.";
+    else if(w.type==="vague") explanation+="Vague responsibility without defined output.";
+    else if(w.type==="subtle") explanation+="Professional-sounding but lacks quantifiable result or system.";
+    explanation+="<br>";
   });
 
   if(missed.length){
     explanation+="<br><strong>Missed High-Value Language:</strong><br>";
     missed.forEach(m=>{
-      explanation+="<div>🔵 "+m+" — Structured, measurable, or system-based language ATS prioritizes.</div>";
+      explanation+="🔵 "+m+" — Structured, measurable, tool-based, or system-driven language that ATS prioritizes.<br>";
     });
   }
 
