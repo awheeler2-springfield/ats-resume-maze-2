@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Scan Immersion</title>
+<title>ATS Word-Level Scan</title>
 
 <style>
 :root{
@@ -14,7 +14,7 @@
   --red:#c0392b;
 }
 
-body{margin:0;font-family:Georgia, serif;background:var(--bg);color:#111;}
+body{margin:0;background:var(--bg);font-family:Georgia, serif;color:#111;}
 
 .rail{
   position:fixed;left:0;top:0;
@@ -24,71 +24,55 @@ body{margin:0;font-family:Georgia, serif;background:var(--bg);color:#111;}
   font-family:Arial;
 }
 
-.main{
-  margin-left:340px;
-  padding:40px;
-}
+.main{margin-left:340px;padding:40px;}
 
 .resume{
-  max-width:850px;
-  margin:auto;
+  max-width:850px;margin:auto;
   background:var(--paper);
   padding:50px;
   box-shadow:0 2px 18px rgba(0,0,0,.08);
 }
 
-h1{margin:0;font-size:1.8rem;}
+h1{margin:0;font-size:1.9rem;}
+.header-line{margin-top:4px;color:#444;}
+
 .section-title{
-  margin-top:24px;
+  margin-top:26px;
   font-weight:bold;
   border-bottom:1px solid #000;
   padding-bottom:4px;
 }
 
+.job-title{font-weight:bold;margin-top:16px;}
+.company{color:#444;}
+
 ul{margin:8px 0 0 18px;}
 
-.clickable{
+.word{
   cursor:pointer;
-  padding:2px 4px;
+  padding:1px 2px;
 }
 
 .correct{background:var(--green);color:#fff;}
 .wrong{background:var(--red);color:#fff;}
 
+.small{font-size:.9rem;}
 button{
   padding:8px 12px;
   border:none;
   border-radius:6px;
-  margin:6px 0;
+  margin-top:10px;
   cursor:pointer;
 }
-
-.small{font-size:.9rem;}
 </style>
 </head>
 <body>
 
 <div class="rail">
-  <h2>ATS Immersion</h2>
+  <h2>ATS Word Scan</h2>
   <div>Score: <span id="score">0</span></div>
-  <div>Time: <span id="timer">60</span></div>
-  <div>Mode: <span id="modeLabel">Highlight Strengths</span></div>
-  <div>Domain:
-    <select id="domain">
-      <option value="data">Data</option>
-      <option value="marketing">Marketing</option>
-      <option value="operations">Operations</option>
-    </select>
-  </div>
-  <div>Difficulty:
-    <select id="difficulty">
-      <option value="easy">Easy</option>
-      <option value="medium">Medium</option>
-      <option value="hard">Hard</option>
-    </select>
-  </div>
-  <button onclick="toggleMode()">Toggle Mode</button>
-  <button onclick="start()">Start</button>
+  <div>Time: <span id="timer">75</span></div>
+  <button onclick="start()">Start Scan</button>
   <div id="results" class="small"></div>
 </div>
 
@@ -99,22 +83,32 @@ button{
 <script>
 
 let score=0;
-let timer=60;
-let active=false;
+let timer=75;
 let interval;
-let mode="strength";
-let stats={correct:0,wrong:0,missed:0};
+let active=false;
 
-function toggleMode(){
-mode = (mode==="strength")?"risk":"strength";
-document.getElementById("modeLabel").textContent =
-mode==="strength"?"Highlight Strengths":"Highlight Risks";
-}
+let stats={
+  strongFound:0,
+  trapsClicked:0,
+  missedStrong:0,
+  totalStrong:0
+};
+
+const strongWords=[
+"Improved","Reduced","Increased","Analyzed","Built",
+"18%","35%","20%","$650,000","$40,000,000",
+"Predictive","Optimized","Led","Executed","Securing"
+];
+
+const trapWords=[
+"Passion","Hard-working","Responsible",
+"Helped","Synergy","Various","Worked","Significantly"
+];
 
 function start(){
 score=0;
-timer=60;
-stats={correct:0,wrong:0,missed:0};
+timer=75;
+stats={strongFound:0,trapsClicked:0,missedStrong:0,totalStrong:0};
 active=true;
 document.getElementById("score").textContent=score;
 document.getElementById("timer").textContent=timer;
@@ -130,98 +124,69 @@ if(timer<=0){
 clearInterval(interval);
 active=false;
 calculateMissed();
-showResults();
+showFeedback();
 }
 }
 
 function buildResume(){
 
-const domain=document.getElementById("domain").value;
-const difficulty=document.getElementById("difficulty").value;
+let resumeText = `
+Charles Bloomberg
+Seoul, South Korea • charlesbloomberg@gmail.com • (621) 799-5548
 
-let strengthPhrases=[
-"Improved ROI by 18%",
-"Increased engagement 35% in 6 months",
-"Analyzed cross-channel performance data",
-"Reduced fulfillment time 20%",
-"Built predictive models"
-];
+PROFESSIONAL SUMMARY
+Passion for building inspiring companies through industry-leading tech, design, and execution.
 
-let riskPhrases=[
-"Hard-working team player",
-"Responsible for helping",
-"SEO GA4 AI KPI scrum agile",
-"Grew awareness significantly",
-"Two-column layout with icons"
-];
+PROFESSIONAL EXPERIENCE
 
-if(difficulty==="hard"){
-riskPhrases.push("Results-driven professional");
-strengthPhrases.push("Reduced CPA by 14%");
-}
+CEO & Founder — Rezi
+• Improved user growth by 18% securing over $650,000 in funding.
+• Built scalable partnerships and Increased global expansion 35%.
+• Responsible for helping marketing teams optimize outreach.
 
-function span(text,type){
-return `<span class="clickable" data-type="${type}">${text}</span>`;
-}
+Web Developer — Kaplan
+• Executed redesign and Optimized landing pages.
+• Worked on various analytics reports and Helped improve performance.
 
-let resumeHTML=`
-<h1>Jordan Avery</h1>
-Springfield, MA • jordan@email.com • (555) 555-5555
-
-<div class="section-title">SUMMARY</div>
-<p>
-${span(strengthPhrases[0],"strength")} with experience in analytics and reporting,
-${span(riskPhrases[0],"risk")} passionate about innovation.
-</p>
-
-<div class="section-title">SKILLS</div>
-<p>
-SQL • Tableau • GA4 • Reporting •
-${span(riskPhrases[2],"risk")}
-</p>
-
-<div class="section-title">PROFESSIONAL EXPERIENCE</div>
-
-<strong>Senior Analyst — Meridian Insights</strong>
-<ul>
-<li>
-${span(strengthPhrases[2],"strength")} to support executive decisions
-and ${span(riskPhrases[1],"risk")} across departments.
-</li>
-<li>
-${span(strengthPhrases[1],"strength")} while
-${span(riskPhrases[3],"risk")}.
-</li>
-</ul>
-
-<strong>Operations Intern — Northstar Logistics</strong>
-<ul>
-<li>
-${span(strengthPhrases[3],"strength")} through KPI tracking,
-avoiding ${span(riskPhrases[4],"risk")}.
-</li>
-</ul>
-
-<div class="section-title">PROJECTS</div>
-<p>
-Developed interactive ATS Resume Maze; ${span(strengthPhrases[4],"strength")}
-for hiring simulations.
-</p>
+Marketing Analyst — Kaplan
+• Analyzed data and Reduced CPA by 20%.
+• Significantly increased awareness through synergy initiatives.
 `;
 
-document.getElementById("resume").innerHTML=resumeHTML;
+let words = resumeText.split(" ");
 
-document.querySelectorAll(".clickable").forEach(el=>{
+let html="";
+words.forEach(word=>{
+let clean=word.replace(/[^a-zA-Z0-9%$]/g,"");
+let type="";
+if(strongWords.includes(clean)){
+type="strength";
+stats.totalStrong++;
+}
+if(trapWords.includes(clean)){
+type="risk";
+}
+if(type){
+html+=`<span class="word" data-type="${type}">${word}</span> `;
+}else{
+html+=word+" ";
+}
+});
+
+document.getElementById("resume").innerHTML=html;
+
+document.querySelectorAll(".word").forEach(el=>{
 el.onclick=function(){
 if(!active)return;
 let type=el.getAttribute("data-type");
-if(type===mode){
-score+=3;
-stats.correct++;
+if(type==="strength"){
+score+=4;
+stats.strongFound++;
 el.classList.add("correct");
-}else{
-score-=2;
-stats.wrong++;
+}
+if(type==="risk"){
+score-=3;
+stats.trapsClicked++;
 el.classList.add("wrong");
 }
 document.getElementById("score").textContent=score;
@@ -230,30 +195,42 @@ document.getElementById("score").textContent=score;
 }
 
 function calculateMissed(){
-document.querySelectorAll(".clickable").forEach(el=>{
-if(el.getAttribute("data-type")==="strength" &&
-!el.classList.contains("correct")){
-stats.missed++;
-}
-});
+stats.missedStrong = stats.totalStrong - stats.strongFound;
 }
 
-function showResults(){
-let analysis="";
-if(score>30){
-analysis="You demonstrated strong ATS-level discrimination between signal and noise.";
-}else if(score>10){
-analysis="You recognize some high-signal language but may be overlooking measurable impact.";
+function showFeedback(){
+
+let diagnostic="";
+
+if(stats.trapsClicked===0){
+diagnostic+="You demonstrated disciplined lexical discrimination. ";
 }else{
-analysis="You may be prioritizing buzzwords or aesthetics over quantifiable and ATS-safe phrasing.";
+diagnostic+="You clicked language that signals low rhetorical density or inflated abstraction. ";
 }
+
+if(stats.missedStrong>2){
+diagnostic+="You overlooked measurable impact markers; your scanning pattern may prioritize narrative over quantifiable proof. ";
+}
+
+if(score>25){
+diagnostic+="Overall, your scan pattern suggests an ability to detect metrics, agency, and scalable outcomes under time pressure.";
+}else{
+diagnostic+="Your scan pattern suggests susceptibility to abstraction and weak-verb constructions.";
+}
+
+diagnostic+=`
+<br><br><strong>Metrics:</strong>
+<br>Strong words found: ${stats.strongFound}/${stats.totalStrong}
+<br>Trap words clicked: ${stats.trapsClicked}
+<br>Missed high-signal words: ${stats.missedStrong}
+<br><br>
+Reflect: Did you privilege verbs, numbers, or perceived leadership language? 
+What would change if you were optimizing for ATS parsing rather than human narrative?
+`;
 
 document.getElementById("results").innerHTML=
 "<br><strong>Final Score:</strong> "+score+
-"<br>Correct: "+stats.correct+
-"<br>Wrong: "+stats.wrong+
-"<br>Missed Strengths: "+stats.missed+
-"<br><br>"+analysis;
+"<br><br>"+diagnostic;
 }
 
 </script>
