@@ -3,566 +3,274 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Resume Maze — Stable + No Visual Tells</title>
+<title>ATS Hybrid Trainer</title>
 
 <style>
 :root{
+  --nav:#1D3461;
   --bg:#f3f3f3;
   --paper:#fff;
   --ink:#111;
-  --ui:#ddd;
-  --nav:#1D3461;
+  --green:#1A6B45;
+  --red:#c0392b;
   --yellow:#ffe86a;
-  --tealbg:#F0FAFB;
-  --teal:#0A6E6E;
-  --red:#ff6b6b;
 }
 
-body{ margin:0; background:var(--bg); font-family:Georgia, serif; color:var(--ink); }
-
+body{margin:0;font-family:Arial;background:var(--bg);color:var(--ink);}
 .rail{
-  position:fixed; left:0; top:0;
-  width:360px; height:100vh;
-  background:var(--nav); color:#fff;
-  padding:16px; box-sizing:border-box;
-  overflow:auto;
+  position:fixed;left:0;top:0;
+  width:320px;height:100vh;
+  background:var(--nav);color:#fff;
+  padding:20px;box-sizing:border-box;
 }
-.rail h2{ margin:0 0 12px; font-family:Arial, sans-serif; }
-.stat{ margin:8px 0; font-family:Arial, sans-serif; }
+.rail h2{margin-top:0;}
+.stat{margin:10px 0;}
 button{
-  cursor:pointer; border:none;
-  padding:10px 12px;
-  font-weight:bold; border-radius:6px;
-  background:#FFFBF0; color:var(--nav);
+  padding:10px 14px;border:none;border-radius:6px;
+  font-weight:bold;cursor:pointer;
 }
 
-#debriefBox{
-  margin-top:14px;
-  padding:12px;
-  border-radius:10px;
-  background:rgba(255,255,255,.10);
-  display:none;
-  font-family:Arial, sans-serif;
-  font-size:.92rem;
-  line-height:1.35;
+.main{
+  margin-left:320px;
+  padding:40px;
 }
-#debriefBox h3{ margin:0 0 8px; font-size:1rem; }
-#debriefBox .mini{ opacity:.9; font-size:.88rem; }
-#debriefBox ul{ margin:8px 0 0 18px; padding:0; }
 
-.page{ margin-left:360px; padding:30px 20px; }
-.resume{
-  max-width:980px; margin:0 auto;
+.card{
+  max-width:900px;
+  margin:auto;
   background:var(--paper);
-  padding:46px 64px;
+  padding:40px;
+  border-radius:12px;
   box-shadow:0 2px 14px rgba(0,0,0,.08);
 }
 
-.section{ margin-top:22px; }
-.section-title{
-  font-weight:bold;
-  border-bottom:1px solid #000;
-  padding-bottom:4px;
-  margin-bottom:10px;
+.phrase{
+  font-size:1.3rem;
+  margin:20px 0;
 }
 
-/* Inline chunk pills */
-.chunk{
+.option{
   display:inline-block;
-  padding:4px 8px;
-  margin:2px 4px 2px 0;
+  padding:8px 14px;
+  margin:6px;
   border-radius:999px;
-  background:#fafafa;
-  border:1px solid #e8e8e8;
+  border:1px solid #ddd;
   cursor:pointer;
-  font-family:Arial, sans-serif;
-  font-size:.92rem;
-  vertical-align:baseline;
 }
-/* IMPORTANT: no opacity fade; disabled should NOT look "wrong" */
-.chunk.disabled{ pointer-events:none; cursor:not-allowed; }
-.chunk.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
-.chunk.visited{ background:var(--yellow); border-color:#e6d25e; }
-.chunk.current{ background:var(--tealbg); border-color:var(--teal); }
-.chunk.bad{ background:var(--red)!important; color:#fff; border-color:#d94c4c!important; }
 
-/* Block role headers */
-.block{
-  display:block;
-  padding:10px 12px;
-  margin:8px 0;
-  border-radius:8px;
-  background:#fafafa;
-  border:1px solid #e8e8e8;
+.option.correct{background:var(--green);color:#fff;}
+.option.wrong{background:var(--red);color:#fff;}
+
+.hidden{display:none;}
+.bullet-block{margin:18px 0;font-size:1.1rem;}
+.select{
+  display:inline-block;
+  padding:6px 12px;
+  margin:4px;
+  border-radius:6px;
+  border:1px solid #ddd;
   cursor:pointer;
-  font-family:Arial, sans-serif;
 }
-.block.disabled{ pointer-events:none; cursor:not-allowed; } /* no opacity fade */
-.block.available{ outline:2px solid rgba(10,110,110,.35); outline-offset:2px; }
-.block.visited{ background:var(--yellow); border-color:#e6d25e; }
-.block.current{ background:var(--tealbg); border-color:var(--teal); }
-.block.bad{ background:var(--red)!important; color:#fff; border-color:#d94c4c!important; }
-
-.roleBox{
-  margin-top:10px;
-  padding:14px;
-  border:1px solid var(--ui);
-  border-radius:12px;
-  background:#fafafa;
-}
-
-.roleGroup{ margin-top:12px; }
-.roleBullets{ margin:6px 0 0 0; }
-.bullet{ margin:10px 0; }
-.bullet .lead{ display:inline-block; width:18px; }
+.select.correct{background:var(--green);color:#fff;}
+.select.wrong{background:var(--red);color:#fff;}
 </style>
 </head>
 <body>
 
 <div class="rail">
-  <h2>ATS Resume Maze</h2>
-  <div class="stat"><strong>Moves:</strong> <span id="moveCount">0</span></div>
-  <div class="stat"><strong>Score:</strong> <span id="score">100</span></div>
-  <div class="stat"><strong>Trap hits:</strong> <span id="trapCount">0</span></div>
-  <button id="resetBtn">Reset Run</button>
-  <div id="debriefBox"></div>
+  <h2>ATS Hybrid Trainer</h2>
+  <div class="stat">Score: <span id="score">0</span></div>
+  <div class="stat">Time: <span id="timer">60</span></div>
+  <div class="stat">Accuracy: <span id="accuracy">0%</span></div>
+  <button onclick="startSprint()">Start Sprint</button>
 </div>
 
-<div class="page">
-<div class="resume">
+<div class="main">
+<div class="card">
 
-  <div class="section">
-    <div class="section-title">HEADER</div>
-    <div id="headerLine"></div>
+<!-- Phase 1 -->
+<div id="phase1">
+  <h3>Phase 1: ATS Signal Sprint</h3>
+  <div id="phrase" class="phrase"></div>
+  <button onclick="clickSignal(true)">High-Signal</button>
+  <button onclick="clickSignal(false)">Low-Signal</button>
+</div>
+
+<!-- Phase 2 -->
+<div id="phase2" class="hidden">
+  <h3>Phase 2: Rhetorical Assembly</h3>
+
+  <div class="bullet-block">
+    Analyzed
+    <span id="b1a"></span>
+    to identify
+    <span id="b1b"></span>.
   </div>
 
-  <div class="section">
-    <div class="section-title">SUMMARY</div>
-    <div id="summaryLine"></div>
+  <div class="bullet-block">
+    Improved campaign ROI
+    <span id="b2a"></span>
+    through
+    <span id="b2b"></span>.
   </div>
 
-  <div class="section">
-    <div class="section-title">SKILLS</div>
-    <div id="skillsLine"></div>
+  <div class="bullet-block">
+    Kept formatting consistent using
+    <span id="b3a"></span>.
   </div>
 
-  <div class="section">
-    <div class="section-title">PROFESSIONAL EXPERIENCE</div>
-    <div class="roleBox">
+  <button onclick="finishAssembly()">Finish</button>
+</div>
 
-      <div class="roleGroup">
-        <div id="role1Hub"></div>
-        <div class="roleBullets">
-          <div class="bullet"><span class="lead">•</span><span id="r1_b1"></span></div>
-          <div class="bullet"><span class="lead">•</span><span id="r1_b2"></span></div>
-        </div>
-      </div>
-
-      <div class="roleGroup">
-        <div id="role2Hub"></div>
-        <div class="roleBullets">
-          <div class="bullet"><span class="lead">•</span><span id="r2_b1"></span></div>
-          <div class="bullet"><span class="lead">•</span><span id="r2_b2"></span></div>
-        </div>
-      </div>
-
-      <div class="roleGroup">
-        <div id="role3Hub"></div>
-        <div class="roleBullets">
-          <div class="bullet"><span class="lead">•</span><span id="r3_b1"></span></div>
-          <div class="bullet"><span class="lead">•</span><span id="r3_b2"></span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">PROJECTS</div>
-    <div id="projectsLine"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">CERTIFICATIONS</div>
-    <div id="certsLine"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">EDUCATION</div>
-    <div id="educationLine"></div>
-  </div>
+<!-- Debrief -->
+<div id="debrief" class="hidden">
+  <h3>Reflection</h3>
+  <div id="analysis"></div>
+</div>
 
 </div>
 </div>
 
 <script>
-/* =========================================================
-   ENGINE
-========================================================= */
-let nodes = {};   // id -> {id,label,tag,el,kind}
-let graph = {};   // id -> neighbors
-let state;
 
-function addNode(id, label, tag="", kind="chunk"){
-  nodes[id] = { id, label, tag, kind, el: null };
-  graph[id] = [];
+/* =========================
+   PHASE 1 — SIGNAL SPRINT
+========================= */
+
+let phrases = [
+  {text:"Improved ROI by 18%", good:true},
+  {text:"Hard-working team player", good:false},
+  {text:"SEO GA4 AI KPI scrum agile", good:false},
+  {text:"Analyzed cross-channel performance data", good:true},
+  {text:"Two-column layout with icons", good:false},
+  {text:"Increased engagement 35% in 6 months", good:true},
+  {text:"Responsible for helping with reports", good:false}
+];
+
+let sprintActive = false;
+let timer = 60;
+let score = 0;
+let correct = 0;
+let total = 0;
+let interval;
+let current;
+
+function startSprint(){
+  score = 0;
+  correct = 0;
+  total = 0;
+  timer = 60;
+  sprintActive = true;
+  document.getElementById("score").textContent = score;
+  document.getElementById("timer").textContent = timer;
+  document.getElementById("accuracy").textContent = "0%";
+  document.getElementById("phase2").classList.add("hidden");
+  document.getElementById("debrief").classList.add("hidden");
+  nextPhrase();
+  interval = setInterval(tick,1000);
 }
-function connect(a,b){
-  if (!graph[a].includes(b)) graph[a].push(b);
-  if (!graph[b].includes(a)) graph[b].push(a);
-}
-function newState(){
-  return {
-    current: "h_start",
-    visited: new Set(["h_start"]),
-    moves: 0,
-    trapTypes: new Set(),
-    goodTypes: new Set(),
-    reached: new Set() // used to infer strategy in debrief
-  };
+
+function tick(){
+  timer--;
+  document.getElementById("timer").textContent = timer;
+  if(timer<=0){
+    clearInterval(interval);
+    sprintActive = false;
+    beginAssembly();
+  }
 }
 
-/* =========================================================
-   GRAPH (multi-role + traps everywhere, no dead-ends)
-========================================================= */
-function buildGraph(){
-  nodes = {}; graph = {};
+function nextPhrase(){
+  current = phrases[Math.floor(Math.random()*phrases.length)];
+  document.getElementById("phrase").textContent = current.text;
+}
 
-  // Hidden start node (not rendered)
-  addNode("h_start","(start)","section:start","chunk");
+function clickSignal(choice){
+  if(!sprintActive) return;
+  total++;
+  if(choice===current.good){
+    score+=2;
+    correct++;
+  }else{
+    score-=3;
+  }
+  document.getElementById("score").textContent = score;
+  document.getElementById("accuracy").textContent =
+    Math.round((correct/total)*100)+"%";
+  nextPhrase();
+}
 
-  // HEADER choices
-  addNode("h_good","Jordan Avery • Springfield, MA • jordan@example.com • (555) 555-5555","good:clarity","chunk");
-  addNode("h_bad","Jordan Avery ✦ Springfield ✦ linktr.ee/jordan ✦ DM for contact","trap:missing_contact","chunk");
-  connect("h_start","h_good"); connect("h_start","h_bad");
+/* =========================
+   PHASE 2 — ASSEMBLY
+========================= */
 
-  // SUMMARY choices
-  addNode("s_good","Analyst translating cross-channel data into decisions; communicates insights to non-technical stakeholders.","good:signal","chunk");
-  addNode("s_bad","Hard-working, detail-oriented self-starter with a passion for excellence and synergy.","trap:fluff","chunk");
-  connect("h_good","s_good"); connect("h_good","s_bad");
-  connect("h_bad","s_good");  connect("h_bad","s_bad");
+function beginAssembly(){
+  document.getElementById("phase1").classList.add("hidden");
+  document.getElementById("phase2").classList.remove("hidden");
 
-  // SKILLS choices
-  addNode("k_good","SQL • Tableau • GA4 • A/B Testing • Reporting • Stakeholder Communication","good:ats_safe","chunk");
-  addNode("k_bad","Skills shown as ★★★ bars in a two-column table (visual design)","trap:tables_layout","chunk");
-  connect("s_good","k_good"); connect("s_good","k_bad");
-  connect("s_bad","k_good");  connect("s_bad","k_bad");
+  buildSelect("b1a",[
+    {t:"cross-channel performance data",good:true},
+    {t:"various reports",good:false}
+  ]);
+  buildSelect("b1b",[
+    {t:"growth opportunities",good:true},
+    {t:"help where needed",good:false}
+  ]);
 
-  // ROLE HUBS (Hybrid C)
-  addNode("role_1","Senior Data Analyst — Meridian Insights (2021–Present)","good:role","block");
-  addNode("role_2","Marketing Analyst — BrightWave Agency (2018–2021)","good:role","block");
-  addNode("role_3","Operations Intern — Northstar Logistics (2017–2018)","good:role","block");
+  buildSelect("b2a",[
+    {t:"by 18%",good:true},
+    {t:"significantly",good:false}
+  ]);
+  buildSelect("b2b",[
+    {t:"predictive modeling",good:true},
+    {t:"different approaches",good:false}
+  ]);
 
-  connect("k_good","role_1");
-  connect("k_bad","role_1");
+  buildSelect("b3a",[
+    {t:"ATS-safe formatting",good:true},
+    {t:"a designer template with icons",good:false}
+  ]);
+}
 
-  // Bullet builder: 3-step chain with good/trap at each step; always recoverable
-  function bullet(steps){
-    for (const st of steps){
-      addNode(st.good.id, st.good.label, st.good.tag, "chunk");
-      addNode(st.bad.id,  st.bad.label,  st.bad.tag,  "chunk");
-    }
-    for (let i=0;i<steps.length-1;i++){
-      const a1 = steps[i].good.id, a2 = steps[i].bad.id;
-      const n1 = steps[i+1].good.id, n2 = steps[i+1].bad.id;
-      connect(a1,n1); connect(a1,n2);
-      connect(a2,n1); connect(a2,n2);
-    }
-    return {
-      startGood: steps[0].good.id,
-      startBad:  steps[0].bad.id,
-      endGood:   steps[steps.length-1].good.id,
-      endBad:    steps[steps.length-1].bad.id
+function buildSelect(id,options){
+  let container = document.getElementById(id);
+  container.innerHTML="";
+  options.forEach(opt=>{
+    let span=document.createElement("span");
+    span.textContent=opt.t;
+    span.className="select";
+    span.onclick=function(){
+      if(opt.good){
+        span.classList.add("correct");
+        score+=3;
+      }else{
+        span.classList.add("wrong");
+        score-=2;
+      }
+      document.getElementById("score").textContent=score;
     };
+    container.appendChild(span);
+  });
+}
+
+function finishAssembly(){
+  document.getElementById("phase2").classList.add("hidden");
+  document.getElementById("debrief").classList.remove("hidden");
+
+  let reflection="";
+  if(score>80){
+    reflection="You consistently identified high-signal language and constructed evidence-based bullets.";
+  }else if(score>50){
+    reflection="You recognize strong language but occasionally rely on vague or stylistic shortcuts.";
+  }else{
+    reflection="You may be prioritizing appearance or speed over measurable impact and ATS safety.";
   }
 
-  // ROLE 1 bullets
-  const r1b1 = bullet([
-    { good:{id:"r1b1_s1_g", label:"Analyzed", tag:"good:verbs"}, bad:{id:"r1b1_s1_t", label:"Worked on", tag:"trap:weak_verbs"} },
-    { good:{id:"r1b1_s2_g", label:"cross-channel performance data", tag:"good:specificity"}, bad:{id:"r1b1_s2_t", label:"various reports", tag:"trap:vagueness"} },
-    { good:{id:"r1b1_s3_g", label:"to identify growth opportunities.", tag:"good:purpose"}, bad:{id:"r1b1_s3_t", label:"and helped where needed.", tag:"trap:low_signal"} },
-  ]);
-  const r1b2 = bullet([
-    { good:{id:"r1b2_s1_g", label:"Improved campaign ROI", tag:"good:metrics"}, bad:{id:"r1b2_s1_t", label:"Improved results", tag:"trap:no_metrics"} },
-    { good:{id:"r1b2_s2_g", label:"by 18%", tag:"good:metrics"}, bad:{id:"r1b2_s2_t", label:"a lot", tag:"trap:vagueness"} },
-    { good:{id:"r1b2_s3_g", label:"through predictive modeling.", tag:"good:method"}, bad:{id:"r1b2_s3_t", label:"using different approaches.", tag:"trap:low_signal"} },
-  ]);
-  connect("role_1", r1b1.startGood); connect("role_1", r1b1.startBad);
-  connect("role_1", r1b2.startGood); connect("role_1", r1b2.startBad);
-
-  // ROLE 2 bullets
-  const r2b1 = bullet([
-    { good:{id:"r2b1_s1_g", label:"Aligned resume language with", tag:"good:alignment"}, bad:{id:"r2b1_s1_t", label:"Added keywords like", tag:"trap:keyword_dump"} },
-    { good:{id:"r2b1_s2_g", label:"SEO, GA4, and A/B testing", tag:"good:alignment"}, bad:{id:"r2b1_s2_t", label:"SEO GA4 AI synergy KPI scrum agile", tag:"trap:keyword_dump"} },
-    { good:{id:"r2b1_s3_g", label:"using job-specific phrasing.", tag:"good:clarity"}, bad:{id:"r2b1_s3_t", label:"in a dense keyword list.", tag:"trap:keyword_dump"} },
-  ]);
-  const r2b2 = bullet([
-    { good:{id:"r2b2_s1_g", label:"Increased engagement", tag:"good:metrics"}, bad:{id:"r2b2_s1_t", label:"Grew brand awareness", tag:"trap:vanity"} },
-    { good:{id:"r2b2_s2_g", label:"35% in 6 months", tag:"good:metrics"}, bad:{id:"r2b2_s2_t", label:"significantly over time", tag:"trap:vagueness"} },
-    { good:{id:"r2b2_s3_g", label:"by iterating email + social strategy.", tag:"good:method"}, bad:{id:"r2b2_s3_t", label:"through hard work and passion.", tag:"trap:fluff"} },
-  ]);
-  connect("role_2", r2b1.startGood); connect("role_2", r2b1.startBad);
-  connect("role_2", r2b2.startGood); connect("role_2", r2b2.startBad);
-
-  // ROLE 3 bullets
-  const r3b1 = bullet([
-    { good:{id:"r3b1_s1_g", label:"Supported weekly KPI reporting", tag:"good:clarity"}, bad:{id:"r3b1_s1_t", label:"Led enterprise transformation", tag:"trap:overclaim"} },
-    { good:{id:"r3b1_s2_g", label:"for fulfillment operations", tag:"good:specificity"}, bad:{id:"r3b1_s2_t", label:"for everything company-wide", tag:"trap:vagueness"} },
-    { good:{id:"r3b1_s3_g", label:"under manager supervision.", tag:"good:honesty"}, bad:{id:"r3b1_s3_t", label:"as sole owner of strategy.", tag:"trap:overclaim"} },
-  ]);
-  const r3b2 = bullet([
-    { good:{id:"r3b2_s1_g", label:"Kept dates and bullets consistent", tag:"good:formatting"}, bad:{id:"r3b2_s1_t", label:"Used two columns + icons", tag:"trap:tables_layout"} },
-    { good:{id:"r3b2_s2_g", label:"(ATS-safe formatting).", tag:"good:formatting"}, bad:{id:"r3b2_s2_t", label:"(designer template).", tag:"trap:tables_layout"} },
-    { good:{id:"r3b2_s3_g", label:"Improved readability for scanning.", tag:"good:clarity"}, bad:{id:"r3b2_s3_t", label:"Made it “stand out” visually.", tag:"trap:ats_risk"} },
-  ]);
-  connect("role_3", r3b1.startGood); connect("role_3", r3b1.startBad);
-  connect("role_3", r3b2.startGood); connect("role_3", r3b2.startBad);
-
-  // Role ends reconnect to their hubs and unlock next hub (NO dead ends)
-  const r1Ends = [r1b1.endGood,r1b1.endBad,r1b2.endGood,r1b2.endBad];
-  const r2Ends = [r2b1.endGood,r2b1.endBad,r2b2.endGood,r2b2.endBad];
-  const r3Ends = [r3b1.endGood,r3b1.endBad,r3b2.endGood,r3b2.endBad];
-
-  for (const e of r1Ends){ connect(e,"role_1"); connect(e,"role_2"); }
-  for (const e of r2Ends){ connect(e,"role_2"); connect(e,"role_3"); }
-  for (const e of r3Ends){ connect(e,"role_3"); connect(e,"role_2"); connect(e,"role_1"); }
-
-  // Projects (errors outside Experience)
-  addNode("p_good","ATS Resume Maze — click-based maze teaching ATS optimization (HTML/CSS/JS).","good:clarity","chunk");
-  addNode("p_bad","See portfolio (10 links) + embedded images + two-column layout","trap:tables_layout","chunk");
-  for (const e of r2Ends.concat(r3Ends)){ connect(e,"p_good"); connect(e,"p_bad"); }
-
-  // Certs
-  addNode("c_good","Google Analytics Certification • SEO Foundations","good:ats_safe","chunk");
-  addNode("c_bad","Certs shown as logo badges (image-based)","trap:graphics","chunk");
-  connect("p_good","c_good"); connect("p_good","c_bad");
-  connect("p_bad","c_good");  connect("p_bad","c_bad");
-
-  // Education
-  addNode("e_good","B.A., Communication Studies — Institution Name (2017)","good:clarity","chunk");
-  addNode("e_bad","B.A. Communication Studies ✦ Dean’s List ✦ GPA: 3.9 (decorative font)","trap:formatting","chunk");
-  connect("c_good","e_good"); connect("c_good","e_bad");
-  connect("c_bad","e_good");  connect("c_bad","e_bad");
-
-  // Completion node
-  addNode("done","(complete)","section:done","block");
-  connect("e_good","done");
-  connect("e_bad","done");
+  document.getElementById("analysis").innerHTML =
+    "<strong>Final Score:</strong> "+score+
+    "<br><br>"+reflection;
 }
 
-/* =========================================================
-   DOM
-========================================================= */
-function makeEl(id){
-  const n = nodes[id];
-  const el = document.createElement(n.kind === "block" ? "div" : "span");
-  el.className = (n.kind === "block" ? "block" : "chunk");
-  el.textContent = n.label;
-  el.onclick = () => move(id);
-  n.el = el;
-  return el;
-}
-
-function fill(containerId, ids){
-  const c = document.getElementById(containerId);
-  for (const id of ids) c.append(makeEl(id));
-}
-
-function buildDOM(){
-  const clearIds = [
-    "headerLine","summaryLine","skillsLine",
-    "role1Hub","role2Hub","role3Hub",
-    "r1_b1","r1_b2","r2_b1","r2_b2","r3_b1","r3_b2",
-    "projectsLine","certsLine","educationLine"
-  ];
-  for (const cid of clearIds) document.getElementById(cid).innerHTML = "";
-
-  // Header: only show choices (not the hidden start node)
-  fill("headerLine", ["h_good","h_bad"]);
-  fill("summaryLine", ["s_good","s_bad"]);
-  fill("skillsLine", ["k_good","k_bad"]);
-
-  // Role hubs
-  fill("role1Hub", ["role_1"]);
-  fill("role2Hub", ["role_2"]);
-  fill("role3Hub", ["role_3"]);
-
-  // Role 1 bullets
-  fill("r1_b1", ["r1b1_s1_g","r1b1_s1_t","r1b1_s2_g","r1b1_s2_t","r1b1_s3_g","r1b1_s3_t"]);
-  fill("r1_b2", ["r1b2_s1_g","r1b2_s1_t","r1b2_s2_g","r1b2_s2_t","r1b2_s3_g","r1b2_s3_t"]);
-
-  // Role 2 bullets
-  fill("r2_b1", ["r2b1_s1_g","r2b1_s1_t","r2b1_s2_g","r2b1_s2_t","r2b1_s3_g","r2b1_s3_t"]);
-  fill("r2_b2", ["r2b2_s1_g","r2b2_s1_t","r2b2_s2_g","r2b2_s2_t","r2b2_s3_g","r2b2_s3_t"]);
-
-  // Role 3 bullets
-  fill("r3_b1", ["r3b1_s1_g","r3b1_s1_t","r3b1_s2_g","r3b1_s2_t","r3b1_s3_g","r3b1_s3_t"]);
-  fill("r3_b2", ["r3b2_s1_g","r3b2_s1_t","r3b2_s2_g","r3b2_s2_t","r3b2_s3_g","r3b2_s3_t"]);
-
-  // Projects / Certs / Education
-  fill("projectsLine", ["p_good","p_bad"]);
-  fill("certsLine", ["c_good","c_bad"]);
-  fill("educationLine", ["e_good","e_bad"]);
-}
-
-/* =========================================================
-   RENDER / MOVE / SCORE
-========================================================= */
-function flashBad(id){
-  const el = nodes[id]?.el;
-  if (!el) return;
-  el.classList.add("bad");
-  setTimeout(() => el.classList.remove("bad"), 350);
-}
-
-function render(){
-  // Disable everything (without fading)
-  for (const id in nodes){
-    const n = nodes[id];
-    const el = n.el;
-    if (!el) continue;
-
-    const base = (n.kind === "block") ? "block" : "chunk";
-    el.className = base + " disabled";
-
-    // Visited styling
-    if (state.visited.has(id)){
-      if (n.tag.startsWith("trap:")) el.classList.add("bad");
-      else el.classList.add("visited");
-    }
-  }
-
-  // Current
-  const curEl = nodes[state.current]?.el;
-  if (curEl){
-    curEl.classList.add("current");
-    curEl.classList.remove("disabled");
-  }
-
-  // Neighbors enabled
-  const neighbors = graph[state.current] || [];
-  for (const nid of neighbors){
-    const el = nodes[nid]?.el;
-    if (!el) continue;
-    el.classList.remove("disabled");
-    el.classList.add("available");
-  }
-
-  // Score
-  const trapPenalty = state.trapTypes.size * 8;
-  const baseScore = 100 - state.moves - trapPenalty;
-
-  const metricBonus = state.goodTypes.has("good:metrics") ? 5 : 0;
-  const atsRiskCount = Array.from(state.trapTypes).filter(t => ["trap:tables_layout","trap:graphics","trap:formatting","trap:ats_risk"].includes(t)).length;
-  const atsRiskPenalty = Math.max(0, atsRiskCount - 1) * 4;
-
-  const score = Math.max(0, baseScore + metricBonus - atsRiskPenalty);
-
-  document.getElementById("moveCount").textContent = String(state.moves);
-  document.getElementById("trapCount").textContent = String(state.trapTypes.size);
-  document.getElementById("score").textContent = String(score);
-
-  if (state.current === "done"){
-    showDebrief({ score, atsRiskCount });
-  }
-}
-
-function move(id){
-  const neighbors = graph[state.current] || [];
-  if (!neighbors.includes(id)) return;
-
-  state.moves++;
-  state.current = id;
-  state.visited.add(id);
-
-  const tag = nodes[id].tag || "";
-  if (tag.startsWith("trap:")){
-    state.trapTypes.add(tag);
-    render();
-    flashBad(id);
-  } else if (tag.startsWith("good:")){
-    state.goodTypes.add(tag);
-    render();
-  } else {
-    render();
-  }
-}
-
-/* =========================================================
-   DEBRIEF (student-facing)
-========================================================= */
-function showDebrief(meta){
-  const box = document.getElementById("debriefBox");
-  box.style.display = "block";
-
-  const trapList = Array.from(state.trapTypes).map(t=>t.replace("trap:","").replaceAll("_"," "));
-  const trapText = trapList.length ? trapList.join(", ") : "none";
-
-  // Strategy heuristic: what did they commit to (good/trap) early?
-  const startedImpact = state.visited.has("r1b2_s1_g") || state.visited.has("r2b2_s1_g") || state.visited.has("r1b2_s1_t") || state.visited.has("r2b2_s1_t");
-  const startedATS = state.visited.has("k_good") || state.visited.has("k_bad") || state.visited.has("r2b1_s1_g") || state.visited.has("r2b1_s1_t") || state.visited.has("r3b2_s1_g") || state.visited.has("r3b2_s1_t");
-  const startedNarrative = state.visited.has("s_good") || state.visited.has("s_bad") || state.visited.has("r1b1_s1_g") || state.visited.has("r1b1_s1_t");
-
-  let strategy = "mixed";
-  if (startedImpact && !startedATS) strategy = "impact-first";
-  else if (startedATS && !startedImpact) strategy = "ATS-first";
-  else if (startedNarrative && !startedATS && !startedImpact) strategy = "narrative-first";
-
-  let stratLine = "";
-  if (strategy === "impact-first"){
-    stratLine = "You foregrounded outcomes and evidence early, treating measurable impact as the central proof of credibility.";
-  } else if (strategy === "ATS-first"){
-    stratLine = "You foregrounded scanability and alignment, treating ATS readability as a prerequisite for being considered.";
-  } else if (strategy === "narrative-first"){
-    stratLine = "You foregrounded descriptive clarity (actions + scope) before optimization, building comprehension first.";
-  } else {
-    stratLine = "You used a mixed sequencing strategy, shifting between clarity, impact, and alignment.";
-  }
-
-  const takeaways = [];
-  if (state.trapTypes.has("trap:missing_contact")) takeaways.push("You chose a non-standard contact format. That can slow down human follow-up and can be misparsed by systems.");
-  if (state.trapTypes.has("trap:fluff")) takeaways.push("You used low-information summary language. It reads as generic and is hard to verify.");
-  if (state.trapTypes.has("trap:tables_layout")) takeaways.push("You used a layout risk (tables/columns/icons). ATS parsing can break or drop content.");
-  if (state.trapTypes.has("trap:graphics")) takeaways.push("You used image-based credential signaling. ATS parsers may not read it.");
-  if (state.trapTypes.has("trap:formatting")) takeaways.push("You introduced decorative formatting that can reduce scanning consistency.");
-  if (state.trapTypes.has("trap:weak_verbs")) takeaways.push("You chose low-signal verbs in places where action verbs increase agency.");
-  if (state.trapTypes.has("trap:no_metrics")) takeaways.push("You accepted non-quantified impact. Metrics often function as early “proof” in scans.");
-  if (state.trapTypes.has("trap:keyword_dump")) takeaways.push("You drifted toward keyword dumping. Alignment helps; ungrounded lists reduce readability and credibility.");
-  if (state.trapTypes.has("trap:overclaim")) takeaways.push("You overstated responsibility (especially risky in internship roles). Overclaiming weakens trust if verified.");
-  if (state.trapTypes.has("trap:vanity")) takeaways.push("You leaned on vanity framing (“awareness”) without measurable definition.");
-
-  if (takeaways.length === 0) takeaways.push("You consistently made high-signal, ATS-safe choices across sections and roles.");
-
-  const prompts = [
-    "Choose one trap you hit. How would you rewrite that line to satisfy ATS scanability and human trust at the same time?",
-    "Where did you prioritize readability over keyword alignment (or the reverse), and what did that trade-off buy you?",
-    "Which role in the progression needs the most tightening to feel credible and coherent, and why?"
-  ];
-
-  box.innerHTML = `
-    <h3>Reflection</h3>
-    <div class="mini"><strong>Score:</strong> ${meta.score} • <strong>Trap hits:</strong> ${trapText}</div>
-    <div style="margin-top:10px;">${stratLine}</div>
-    <div style="margin-top:10px;"><strong>What your choices suggest:</strong></div>
-    <ul>${takeaways.map(t=>`<li>${t}</li>`).join("")}</ul>
-    <div style="margin-top:10px;"><strong>Next-step prompt:</strong> ${prompts[Math.floor(Math.random()*prompts.length)]}</div>
-  `;
-}
-
-/* =========================================================
-   RESET
-========================================================= */
-function reset(){
-  document.getElementById("debriefBox").style.display = "none";
-  document.getElementById("debriefBox").innerHTML = "";
-
-  buildGraph();
-  buildDOM();
-  state = newState();
-  render();
-}
-document.getElementById("resetBtn").onclick = reset;
-reset();
 </script>
 </body>
 </html>
