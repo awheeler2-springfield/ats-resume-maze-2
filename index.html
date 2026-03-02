@@ -3,272 +3,242 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>ATS Hybrid Trainer</title>
+<title>ATS Scan Simulation</title>
 
 <style>
 :root{
   --nav:#1D3461;
   --bg:#f3f3f3;
   --paper:#fff;
-  --ink:#111;
   --green:#1A6B45;
   --red:#c0392b;
-  --yellow:#ffe86a;
 }
 
-body{margin:0;font-family:Arial;background:var(--bg);color:var(--ink);}
+body{margin:0;font-family:Arial;background:var(--bg);}
 .rail{
   position:fixed;left:0;top:0;
   width:320px;height:100vh;
   background:var(--nav);color:#fff;
   padding:20px;box-sizing:border-box;
 }
-.rail h2{margin-top:0;}
-.stat{margin:10px 0;}
-button{
-  padding:10px 14px;border:none;border-radius:6px;
-  font-weight:bold;cursor:pointer;
-}
-
-.main{
-  margin-left:320px;
-  padding:40px;
-}
-
-.card{
-  max-width:900px;
-  margin:auto;
-  background:var(--paper);
-  padding:40px;
-  border-radius:12px;
+.main{margin-left:320px;padding:40px;}
+.resume{
+  max-width:900px;margin:auto;
+  background:#fff;padding:40px;
+  border-radius:10px;
   box-shadow:0 2px 14px rgba(0,0,0,.08);
 }
 
+.section-title{font-weight:bold;margin-top:20px;border-bottom:1px solid #000;}
+
 .phrase{
-  font-size:1.3rem;
-  margin:20px 0;
-}
-
-.option{
-  display:inline-block;
-  padding:8px 14px;
-  margin:6px;
-  border-radius:999px;
-  border:1px solid #ddd;
   cursor:pointer;
+  padding:2px 4px;
 }
 
-.option.correct{background:var(--green);color:#fff;}
-.option.wrong{background:var(--red);color:#fff;}
+.correct{background:var(--green);color:#fff;}
+.wrong{background:var(--red);color:#fff;}
 
-.hidden{display:none;}
-.bullet-block{margin:18px 0;font-size:1.1rem;}
-.select{
-  display:inline-block;
-  padding:6px 12px;
-  margin:4px;
+button{
+  padding:8px 12px;
+  border:none;
   border-radius:6px;
-  border:1px solid #ddd;
+  margin:6px 0;
   cursor:pointer;
 }
-.select.correct{background:var(--green);color:#fff;}
-.select.wrong{background:var(--red);color:#fff;}
 </style>
 </head>
 <body>
 
 <div class="rail">
-  <h2>ATS Hybrid Trainer</h2>
-  <div class="stat">Score: <span id="score">0</span></div>
-  <div class="stat">Time: <span id="timer">60</span></div>
-  <div class="stat">Accuracy: <span id="accuracy">0%</span></div>
-  <button onclick="startSprint()">Start Sprint</button>
+  <h2>ATS Scan Simulation</h2>
+  <div>Score: <span id="score">0</span></div>
+  <div>Time: <span id="timer">60</span></div>
+  <div>Mode: <span id="modeLabel">Highlight Strengths</span></div>
+  <div>Domain:
+    <select id="domainSelect">
+      <option value="data">Data</option>
+      <option value="marketing">Marketing</option>
+      <option value="operations">Operations</option>
+    </select>
+  </div>
+  <div>Difficulty:
+    <select id="difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium">Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+  <button onclick="toggleMode()">Toggle Mode</button>
+  <button onclick="startGame()">Start</button>
+  <div id="results"></div>
 </div>
 
 <div class="main">
-<div class="card">
-
-<!-- Phase 1 -->
-<div id="phase1">
-  <h3>Phase 1: ATS Signal Sprint</h3>
-  <div id="phrase" class="phrase"></div>
-  <button onclick="clickSignal(true)">High-Signal</button>
-  <button onclick="clickSignal(false)">Low-Signal</button>
-</div>
-
-<!-- Phase 2 -->
-<div id="phase2" class="hidden">
-  <h3>Phase 2: Rhetorical Assembly</h3>
-
-  <div class="bullet-block">
-    Analyzed
-    <span id="b1a"></span>
-    to identify
-    <span id="b1b"></span>.
-  </div>
-
-  <div class="bullet-block">
-    Improved campaign ROI
-    <span id="b2a"></span>
-    through
-    <span id="b2b"></span>.
-  </div>
-
-  <div class="bullet-block">
-    Kept formatting consistent using
-    <span id="b3a"></span>.
-  </div>
-
-  <button onclick="finishAssembly()">Finish</button>
-</div>
-
-<!-- Debrief -->
-<div id="debrief" class="hidden">
-  <h3>Reflection</h3>
-  <div id="analysis"></div>
-</div>
-
-</div>
+<div class="resume" id="resume"></div>
 </div>
 
 <script>
 
-/* =========================
-   PHASE 1 — SIGNAL SPRINT
-========================= */
-
-let phrases = [
-  {text:"Improved ROI by 18%", good:true},
-  {text:"Hard-working team player", good:false},
-  {text:"SEO GA4 AI KPI scrum agile", good:false},
-  {text:"Analyzed cross-channel performance data", good:true},
-  {text:"Two-column layout with icons", good:false},
-  {text:"Increased engagement 35% in 6 months", good:true},
-  {text:"Responsible for helping with reports", good:false}
-];
-
-let sprintActive = false;
-let timer = 60;
-let score = 0;
-let correct = 0;
-let total = 0;
+let score=0;
+let timer=60;
 let interval;
-let current;
+let mode="strength"; // or "risk"
+let active=false;
+let stats={correct:0,wrong:0,missed:0};
 
-function startSprint(){
-  score = 0;
-  correct = 0;
-  total = 0;
-  timer = 60;
-  sprintActive = true;
-  document.getElementById("score").textContent = score;
-  document.getElementById("timer").textContent = timer;
-  document.getElementById("accuracy").textContent = "0%";
-  document.getElementById("phase2").classList.add("hidden");
-  document.getElementById("debrief").classList.add("hidden");
-  nextPhrase();
-  interval = setInterval(tick,1000);
+const phraseBank={
+data:{
+strength:[
+"Improved ROI by 18%",
+"Analyzed cross-channel performance data",
+"Built predictive models",
+"Increased engagement 35%",
+"Automated reporting workflow"
+],
+risk:[
+"Hard-working team player",
+"Worked on various reports",
+"SEO GA4 AI KPI scrum agile",
+"Responsible for helping",
+"Two-column layout with icons"
+]
+},
+marketing:{
+strength:[
+"Increased conversion rate 22%",
+"Optimized email segmentation",
+"Led A/B testing initiative",
+"Reduced CPA by 14%",
+"Improved CTR 30%"
+],
+risk:[
+"Passionate about branding",
+"Grew awareness significantly",
+"Synergy-driven strategy",
+"Multi-tasked efficiently",
+"Designer resume template"
+]
+},
+operations:{
+strength:[
+"Reduced fulfillment time 20%",
+"Streamlined workflow processes",
+"Implemented KPI tracking",
+"Cut costs by 12%",
+"Improved supply chain efficiency"
+],
+risk:[
+"Helped where needed",
+"Managed everything company-wide",
+"Team-oriented mindset",
+"Visually enhanced resume layout",
+"General operational support"
+]
+}
+};
+
+function startGame(){
+score=0;
+stats={correct:0,wrong:0,missed:0};
+timer=60;
+active=true;
+document.getElementById("score").textContent=score;
+document.getElementById("timer").textContent=timer;
+buildResume();
+interval=setInterval(tick,1000);
 }
 
 function tick(){
-  timer--;
-  document.getElementById("timer").textContent = timer;
-  if(timer<=0){
-    clearInterval(interval);
-    sprintActive = false;
-    beginAssembly();
-  }
+timer--;
+document.getElementById("timer").textContent=timer;
+if(timer<=0){
+clearInterval(interval);
+active=false;
+calculateMissed();
+showResults();
+}
 }
 
-function nextPhrase(){
-  current = phrases[Math.floor(Math.random()*phrases.length)];
-  document.getElementById("phrase").textContent = current.text;
+function toggleMode(){
+mode = (mode==="strength")?"risk":"strength";
+document.getElementById("modeLabel").textContent =
+mode==="strength"?"Highlight Strengths":"Highlight Risks";
 }
 
-function clickSignal(choice){
-  if(!sprintActive) return;
-  total++;
-  if(choice===current.good){
-    score+=2;
-    correct++;
-  }else{
-    score-=3;
-  }
-  document.getElementById("score").textContent = score;
-  document.getElementById("accuracy").textContent =
-    Math.round((correct/total)*100)+"%";
-  nextPhrase();
+function buildResume(){
+const domain=document.getElementById("domainSelect").value;
+const difficulty=document.getElementById("difficulty").value;
+let strengths=[...phraseBank[domain].strength];
+let risks=[...phraseBank[domain].risk];
+
+if(difficulty==="hard"){
+strengths.push("Demonstrated impact across verticals");
+risks.push("Results-driven professional");
 }
 
-/* =========================
-   PHASE 2 — ASSEMBLY
-========================= */
+let combined=[...strengths,...risks];
+shuffle(combined);
 
-function beginAssembly(){
-  document.getElementById("phase1").classList.add("hidden");
-  document.getElementById("phase2").classList.remove("hidden");
+let html="<div class='section-title'>PROFESSIONAL EXPERIENCE</div><ul>";
+combined.forEach(p=>{
+html+=`<li><span class="phrase" data-type="${
+strengths.includes(p)?"strength":"risk"
+}">${p}</span></li>`;
+});
+html+="</ul>";
 
-  buildSelect("b1a",[
-    {t:"cross-channel performance data",good:true},
-    {t:"various reports",good:false}
-  ]);
-  buildSelect("b1b",[
-    {t:"growth opportunities",good:true},
-    {t:"help where needed",good:false}
-  ]);
+document.getElementById("resume").innerHTML=html;
 
-  buildSelect("b2a",[
-    {t:"by 18%",good:true},
-    {t:"significantly",good:false}
-  ]);
-  buildSelect("b2b",[
-    {t:"predictive modeling",good:true},
-    {t:"different approaches",good:false}
-  ]);
-
-  buildSelect("b3a",[
-    {t:"ATS-safe formatting",good:true},
-    {t:"a designer template with icons",good:false}
-  ]);
+document.querySelectorAll(".phrase").forEach(el=>{
+el.onclick=function(){
+if(!active)return;
+let type=el.getAttribute("data-type");
+if(type===mode){
+score+=3;
+stats.correct++;
+el.classList.add("correct");
+}else{
+score-=2;
+stats.wrong++;
+el.classList.add("wrong");
+}
+document.getElementById("score").textContent=score;
+};
+});
 }
 
-function buildSelect(id,options){
-  let container = document.getElementById(id);
-  container.innerHTML="";
-  options.forEach(opt=>{
-    let span=document.createElement("span");
-    span.textContent=opt.t;
-    span.className="select";
-    span.onclick=function(){
-      if(opt.good){
-        span.classList.add("correct");
-        score+=3;
-      }else{
-        span.classList.add("wrong");
-        score-=2;
-      }
-      document.getElementById("score").textContent=score;
-    };
-    container.appendChild(span);
-  });
+function calculateMissed(){
+document.querySelectorAll(".phrase").forEach(el=>{
+let type=el.getAttribute("data-type");
+if(type==="strength" && mode==="strength" && !el.classList.contains("correct")){
+stats.missed++;
+}
+});
 }
 
-function finishAssembly(){
-  document.getElementById("phase2").classList.add("hidden");
-  document.getElementById("debrief").classList.remove("hidden");
+function showResults(){
+let reflection="";
+if(score>30){
+reflection="Strong ATS signal recognition with good risk discrimination.";
+}else if(score>10){
+reflection="Moderate recognition; consider precision in identifying measurable impact.";
+}else{
+reflection="You may be prioritizing buzzwords over measurable and ATS-safe phrasing.";
+}
+document.getElementById("results").innerHTML=
+"<br><strong>Final Score:</strong> "+score+
+"<br>Correct: "+stats.correct+
+"<br>Wrong: "+stats.wrong+
+"<br>Missed Strengths: "+stats.missed+
+"<br><br>"+reflection;
+}
 
-  let reflection="";
-  if(score>80){
-    reflection="You consistently identified high-signal language and constructed evidence-based bullets.";
-  }else if(score>50){
-    reflection="You recognize strong language but occasionally rely on vague or stylistic shortcuts.";
-  }else{
-    reflection="You may be prioritizing appearance or speed over measurable impact and ATS safety.";
-  }
-
-  document.getElementById("analysis").innerHTML =
-    "<strong>Final Score:</strong> "+score+
-    "<br><br>"+reflection;
+function shuffle(a){
+for(let i=a.length-1;i>0;i--){
+let j=Math.floor(Math.random()*(i+1));
+[a[i],a[j]]=[a[j],a[i]];
+}
 }
 
 </script>
