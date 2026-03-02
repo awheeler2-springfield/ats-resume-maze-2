@@ -14,20 +14,19 @@
   --good:#c8f7c5;
   --bad:#ffd6d6;
   --accent:#1d3461;
-  --muted:#666;
 }
 
 body{
   margin:0;
   background:var(--bg);
-  font-family: Georgia, "Times New Roman", serif;
+  font-family:Georgia, "Times New Roman", serif;
   color:var(--ink);
 }
 
 .wrapper{ display:flex; height:100vh; }
 
 .sidebar{
-  width:320px;
+  width:330px;
   background:#fff;
   border-right:1px solid var(--ui);
   padding:18px;
@@ -102,144 +101,191 @@ button.primary{
 }
 </style>
 </head>
-
 <body>
 <div class="wrapper">
 
 <aside class="sidebar">
-  <h2>ATS Optimization Simulator</h2>
+<h2>ATS Optimization Simulator</h2>
 
-  <div class="hud">
-    <div class="row"><span>Level</span><span id="hudLevel">—</span></div>
-    <div class="row"><span>Time</span><span id="hudTime">—</span></div>
-    <div class="row"><span>Score</span><span id="hudScore">0</span></div>
-    <div class="row"><span>Correct</span><span id="hudCorrect">0</span></div>
-    <div class="row"><span>Incorrect</span><span id="hudIncorrect">0</span></div>
-  </div>
+<div class="hud">
+<div class="row"><span>Level</span><span id="hudLevel">—</span></div>
+<div class="row"><span>Time</span><span id="hudTime">—</span></div>
+<div class="row"><span>Score</span><span id="hudScore">0</span></div>
+<div class="row"><span>Correct</span><span id="hudCorrect">0</span></div>
+<div class="row"><span>Incorrect</span><span id="hudIncorrect">0</span></div>
+</div>
 
-  <button class="primary" id="btnStart">Start</button>
-  <button id="btnFinish" disabled>Finish</button>
-  <button id="btnNext" disabled>Next Level</button>
-  <button id="btnRestart">Restart</button>
+<button class="primary" id="btnStart">Start</button>
+<button id="btnFinish" disabled>Finish</button>
+<button id="btnNext" disabled>Next Level</button>
+<button id="btnRestart">Restart</button>
 
-  <div class="panel" id="results" style="display:none;"></div>
+<div class="panel" id="results" style="display:none;"></div>
 </aside>
 
 <main class="resume">
-  <div class="paper" id="paper">
-    <h1>ATS Optimization Simulator</h1>
-    <p>Click Start to begin.</p>
-  </div>
+<div class="paper" id="paper">
+<h1>ATS Optimization Simulator</h1>
+<p>45 seconds. Click only measurable, structured, role-relevant language. Ready?</p>
+</div>
 </main>
 
 </div>
 
 <script>
 
-/* =======================
-   BUZZ SOUND (consistent)
-======================= */
+/* ---------- Buzz (consistent) ---------- */
 
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function buzz(){
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = "square";
-  osc.frequency.setValueAtTime(180, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+  osc.frequency.value = 170;
+  gain.gain.value = 0.12;
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   osc.start();
-  osc.stop(audioCtx.currentTime + 0.18);
+  osc.stop(audioCtx.currentTime + 0.2);
 }
 
-/* =======================
-   DATA (Increased Density + Campus)
-======================= */
+/* ---------- Levels (45 seconds each) ---------- */
 
-const COURSE = [
+const LEVELS = [
+
 {
-  level:1,
-  timeSeconds:75,
-  resume:`
-<h1>Jordan Martinez</h1>
-
+time:45,
+content:`
+<h1>Avery Morgan</h1>
 <h2>Summary</h2>
 <p>
-<span class="token good">Digital Marketing Specialist</span>;
-<span class="token good">SEO strategy</span>;
-<span class="token good">A/B testing</span>;
-<span class="token good">GA4 implementation</span>;
-<span class="token bad">creative visionary</span>;
-<span class="token bad">team player</span>;
-<span class="token good">conversion rate optimization</span>;
-<span class="token good">data-driven reporting</span>;
-<span class="token bad">fast learner</span>.
+<span class="token good">Marketing Coordinator</span>;
+<span class="token good">content calendar management</span>;
+<span class="token good">email segmentation</span>;
+<span class="token good">engagement rate tracking</span>;
+<span class="token bad">creative powerhouse</span>;
+<span class="token bad">visionary brand architect</span>;
+<span class="token good">A/B subject line testing</span>;
+<span class="token good">SEO copywriting</span>;
+<span class="token bad">results-driven storyteller</span>.
 </p>
-
 <h2>Experience</h2>
 <p>
-Improved <span class="token good">conversion rate by 22%</span>;
-Built <span class="token good">KPI dashboards</span>;
-Conducted <span class="token good">keyword research</span>;
-Optimized <span class="token good">landing pages</span>;
-Delivered <span class="token bad">impactful storytelling</span>;
-Led <span class="token bad">high-energy campaigns</span>.
+Increased <span class="token good">newsletter open rate by 28%</span>;
+Managed <span class="token good">social media analytics dashboards</span>;
+Implemented <span class="token good">Google Analytics tracking</span>;
+Optimized <span class="token good">landing page conversion rate</span>;
+<span class="token bad">energized cross-functional vibes</span>;
+<span class="token bad">elevated brand presence</span>.
 </p>
-
 <h2>Campus Leadership</h2>
 <p>
-<span class="token good">Treasurer, Student Senate</span>;
-Managed <span class="token good">$45,000 annual budget</span>;
-Organized <span class="token good">cross-department coordination</span>;
-<span class="token bad">campus changemaker</span>;
-<span class="token bad">motivational presence</span>.
+<span class="token good">President, Communications Club</span>;
+Oversaw <span class="token good">$12,000 event budget</span>;
+Coordinated <span class="token good">interdepartmental logistics</span>;
+<span class="token bad">campus inspiration</span>.
 </p>
+`
+},
 
-<h2>Athletics</h2>
+{
+time:45,
+content:`
+<h1>Riley Chen</h1>
+<h2>Summary</h2>
 <p>
-<span class="token good">Varsity Soccer Team Captain</span>;
-Tracked <span class="token good">performance metrics</span>;
-Coordinated <span class="token good">training schedules</span>;
-<span class="token bad">natural leader</span>;
-<span class="token bad">locker-room inspiration</span>.
+<span class="token good">Operations Coordinator</span>;
+<span class="token good">process improvement</span>;
+<span class="token good">SOP documentation</span>;
+<span class="token good">vendor management</span>;
+<span class="token bad">organizational ninja</span>;
+<span class="token bad">culture champion</span>.
+</p>
+<h2>Experience</h2>
+<p>
+Reduced <span class="token good">processing time by 32%</span>;
+Maintained <span class="token good">compliance documentation</span>;
+Implemented <span class="token good">workflow automation</span>;
+Tracked <span class="token good">budget variance reporting</span>;
+<span class="token bad">boosted morale</span>.
+</p>
+<h2>Residence Life</h2>
+<p>
+<span class="token good">Resident Assistant</span>;
+Managed <span class="token good">incident documentation</span>;
+Organized <span class="token good">program logistics</span>;
+<span class="token bad">hallway hero</span>.
+</p>
+`
+},
+
+{
+time:45,
+content:`
+<h1>Jordan Ellis</h1>
+<h2>Summary</h2>
+<p>
+<span class="token good">HR Generalist</span>;
+<span class="token good">employee onboarding</span>;
+<span class="token good">HRIS administration</span>;
+<span class="token good">benefits coordination</span>;
+<span class="token bad">people-first visionary</span>.
+</p>
+<h2>Experience</h2>
+<p>
+Managed <span class="token good">40+ open requisitions</span>;
+Reduced <span class="token good">time-to-hire by 21%</span>;
+Maintained <span class="token good">compliance tracking systems</span>;
+Produced <span class="token good">weekly HR metrics reports</span>;
+<span class="token bad">championed harmony</span>.
+</p>
+<h2>Peer Mentor</h2>
+<p>
+Tracked <span class="token good">mentorship attendance data</span>;
+Maintained <span class="token good">progress documentation</span>;
+<span class="token bad">inspirational presence</span>.
 </p>
 `
 }
+
 ];
 
-/* =======================
-   GAME STATE
-======================= */
+/* ---------- Game Logic ---------- */
 
-let score=0, correct=0, incorrect=0, timeLeft=0, timer=null;
+let levelIndex=0;
+let score=0;
+let correct=0;
+let incorrect=0;
+let timer=null;
+let timeLeft=0;
 
 const paper=document.getElementById("paper");
 const results=document.getElementById("results");
 
 document.getElementById("btnStart").onclick=start;
 document.getElementById("btnFinish").onclick=finish;
-document.getElementById("btnRestart").onclick=restart;
+document.getElementById("btnNext").onclick=nextLevel;
+document.getElementById("btnRestart").onclick=()=>location.reload();
 
 function start(){
-  const level=COURSE[0];
-  paper.innerHTML=level.resume;
+  const level=LEVELS[levelIndex];
+  paper.innerHTML=level.content;
   score=0; correct=0; incorrect=0;
   results.style.display="none";
+  document.getElementById("btnFinish").disabled=false;
+  document.getElementById("btnNext").disabled=true;
+  document.getElementById("hudLevel").textContent=levelIndex+1;
 
   document.querySelectorAll(".token").forEach(t=>{
     t.onclick=()=>handleClick(t);
   });
 
-  timeLeft=level.timeSeconds;
+  timeLeft=level.time;
   timer=setInterval(()=>{
     timeLeft--;
     document.getElementById("hudTime").textContent=timeLeft+"s";
     if(timeLeft<=0){ clearInterval(timer); finish(); }
   },1000);
-
-  document.getElementById("hudLevel").textContent="1";
 }
 
 function handleClick(t){
@@ -266,15 +312,20 @@ function finish(){
   clearInterval(timer);
   results.style.display="block";
   results.innerHTML=`
-  <strong>Final Score:</strong> ${score}<br/>
-  Correct: ${correct}<br/>
-  Incorrect: ${incorrect}<br/>
-  Remember: measurable outcomes and structured responsibilities matter more than personality claims.
+  <strong>Time's up!</strong><br>
+  Final Score: ${score}<br>
+  Correct: ${correct}<br>
+  Incorrect: ${incorrect}<br><br>
+  ⚡ Remember: metrics beat vibes. Documentation beats charisma. Structure beats hype.
   `;
+  document.getElementById("btnNext").disabled=false;
 }
 
-function restart(){
-  location.reload();
+function nextLevel(){
+  if(levelIndex<LEVELS.length-1){
+    levelIndex++;
+    start();
+  }
 }
 
 </script>
